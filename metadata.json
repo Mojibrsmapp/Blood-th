@@ -1,0 +1,6 @@
+{
+  "name": "TotthoHub Blood",
+  "description": "TotthoHub Blood (তথ্যহাব ব্লাড) - Comprehensive Blood Donation, Emergency Request, Donor Matching & Multi-Role Platform with Turso Migration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

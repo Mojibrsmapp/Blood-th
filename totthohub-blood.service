@@ -1,0 +1,20 @@
+[Unit]
+Description=TotthoHub Blood Application (Port 1000)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/totthohub-blood
+ExecStart=/usr/bin/node /var/www/totthohub-blood/server.js
+Restart=on-failure
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=totthohub-blood
+Environment=NODE_ENV=production
+Environment=PORT=1000
+Environment=HOST=0.0.0.0
+
+[Install]
+WantedBy=multi-user.target

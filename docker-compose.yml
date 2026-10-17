@@ -1,0 +1,13 @@
+services:
+  totthohub-blood:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: totthohub-blood-app
+    restart: always
+    ports:
+      - "1000:1000"
+    environment:
+      - NODE_ENV=production
+      - PORT=1000
+      - HOST=0.0.0.0
