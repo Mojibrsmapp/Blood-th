@@ -15,6 +15,7 @@ import {
   Lock
 } from 'lucide-react';
 import { Donor } from '../types';
+import { SEO } from '../components/SEO';
 
 interface DonorProfileViewProps {
   donor?: Donor;
@@ -37,6 +38,7 @@ export const DonorProfileView: React.FC<DonorProfileViewProps> = ({
   if (!donor) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-16 text-center space-y-4">
+        <SEO title="রক্তদাতার তথ্য পাওয়া যায়নি" />
         <AlertCircle className="w-12 h-12 text-slate-400 mx-auto" />
         <h2 className="text-xl font-bold text-slate-900">রক্তদাতার তথ্য পাওয়া যায়নি</h2>
         <p className="text-xs text-slate-500">অনুরোধকৃত রক্তদাতার প্রোফাইলটি সক্রিয় নয় বা সঠিক আইডি দেওয়া হয়নি।</p>
@@ -53,8 +55,28 @@ export const DonorProfileView: React.FC<DonorProfileViewProps> = ({
 
   const isAvailable = donor.availability === 'available';
 
+  const donorJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: donor.name,
+    jobTitle: `Voluntary Blood Donor (${donor.bloodGroup})`,
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: donor.upazilaName || donor.area,
+      addressRegion: donor.districtName,
+      addressCountry: 'BD',
+    },
+    description: `${donor.name} - রক্তের গ্রুপ ${donor.bloodGroup}, জেলা: ${donor.districtName}। TotthoHub Blood প্ল্যাটফর্মে নিবন্ধিত রক্তদাতা।`,
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <SEO
+        title={`${donor.name} (${donor.bloodGroup}) - রক্তদাতা`}
+        description={`${donor.name} - রক্তের গ্রুপ: ${donor.bloodGroup}, অবস্থান: ${donor.upazilaName || donor.area}, ${donor.districtName}। স্ট্যাটাস: ${donor.availability === 'available' ? 'রক্তদানে প্রস্তুত' : 'সাময়িক বিশ্রামে'}। জরুরি প্রয়োজনে যোগাযোগ করুন।`}
+        canonical={`https://blood.totthohub.com/donor/${donor.id}`}
+        jsonLd={donorJsonLd}
+      />
       
       {/* Back button */}
       <button

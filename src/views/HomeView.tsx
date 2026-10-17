@@ -29,6 +29,7 @@ import {
   Share2,
   Hospital
 } from 'lucide-react';
+import { SEO } from '../components/SEO';
 import { BloodGroup, Donor, BloodRequest, Campaign, Organization } from '../types';
 import { DISTRICTS } from '../data/seedData';
 
@@ -141,6 +142,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
   return (
     <div className="space-y-16 sm:space-y-20 pb-20">
+      <SEO
+        title="TotthoHub Blood - রক্ত দিন, জীবন বাঁচান | তথ্যহাব ব্লাড"
+        description="তথ্যহাব ব্লাড (TotthoHub Blood) - বাংলাদেশের আধুনিক ও বিশ্বস্ত রক্তদান ও রক্তদাতা ম্যাচিং প্ল্যাটফর্ম। জরুরি রক্তের প্রয়োজনে এক ক্লিকে খুঁজুন নিকটস্থ রক্তদাতা।"
+        canonical="https://blood.totthohub.com/"
+        keywords="রক্তদান, রক্তদাতা খুঁজুন, TotthoHub Blood, তথ্যহাব ব্লাড, জরুরি রক্ত, A+, B+, O+, AB+, ব্লাড ডোনেশন বাংলাদেশ"
+      />
       
       {/* ========================================================
           ২. Hero Section

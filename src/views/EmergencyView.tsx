@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { BloodGroup, BloodRequest, Donor } from '../types';
 import { DISTRICTS, INITIAL_HOSPITALS } from '../data/seedData';
+import { SEO } from '../components/SEO';
 
 interface EmergencyViewProps {
   requests: BloodRequest[];
@@ -68,6 +69,12 @@ export const EmergencyView: React.FC<EmergencyViewProps> = ({
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
+      <SEO
+        title="জরুরি রক্তের নোটিশ ও লাইভ হটলাইন"
+        description="সংকটকালীন সময়ে তাৎক্ষণিক রক্তের প্রয়োজনে জরুরি নোটিশ ও হটলাইন। রক্তের গ্রুপ অনুযায়ী দ্রুত রক্তদাতা ও স্বেচ্ছাসেবক সহায়তা পান।"
+        canonical="https://blood.totthohub.com/emergency"
+        keywords="জরুরি রক্ত, emergency blood bangladesh, রক্তের হটলাইন, রক্তদাতা সাহায্য, ৯৯৯, তথ্যহাব ব্লাড"
+      />
       
       {/* Emergency Header Banner */}
       <div className="bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white rounded-3xl p-6 sm:p-10 shadow-lg border border-red-500/30">

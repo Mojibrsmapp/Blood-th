@@ -54,6 +54,35 @@ pm2 logs totthohub-blood
 
 ---
 
+## 🔄 চলমান VPS সাইটে নতুন ফাইল আপডেট করার নিয়ম (Updating Live VPS Site)
+
+আপনার সার্ভারে (`/home/blood.totthohub.com/public_html`) ইতিমধ্যে **`blood-server`** চালু থাকলে, পরবর্তী যেকোনো কোড পরিবর্তন বা আপডেট লাইভ করার নিয়ম:
+
+```bash
+# ১. আপনার ডিরেক্টরিতে যান
+cd /home/blood.totthohub.com/public_html
+
+# ২. গিট থেকে নতুন ফাইল নামান (বা আপলোড করুন)
+git pull origin main
+
+# ৩. কোনো নতুন প্যাকেজ থাকলে ইনস্টল করুন
+npm install
+
+# ৪. নতুন প্রোডাকশন বিল্ড তৈরি করুন
+npm run build
+
+# ৫. চলমান PM2 প্রসেস রিস্টার্ট / রিলোড করুন (জিরো-ডাউনটাইম)
+pm2 reload blood-server
+# অথবা:
+pm2 restart blood-server
+
+# ৬. স্ট্যাটাস ও লাইভ লগ চেক করুন
+pm2 status
+pm2 logs blood-server --lines 20
+```
+
+---
+
 ## 🐳 অপশন ২: Docker & Docker Compose দিয়ে ডিপ্লয়
 
 আপনার VPS এ যদি Docker ইনস্টল থাকে, তবে এক কমান্ডেই পোর্ট ১০০০-এ চলবে:

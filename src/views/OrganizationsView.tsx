@@ -2,10 +2,16 @@ import React from 'react';
 import { Building, ShieldCheck, Phone, Mail, Globe, Users, HeartHandshake } from 'lucide-react';
 import { Organization } from '../types';
 import { INITIAL_ORGANIZATIONS } from '../data/seedData';
+import { SEO } from '../components/SEO';
 
 export const OrganizationsView: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <SEO
+        title="সহযোগী রক্তদান সংস্থা ও সংগঠনসমূহ"
+        description="তথ্যহাব ব্লাডের সাথে সংযুক্ত অনুমোদিত অলাভজনক সংস্থা, বিশ্ববিদ্যালয় ব্লাড ক্লাব ও স্বেচ্ছাসেবী মানবিক সংগঠনসমূহ।"
+        canonical="https://blood.totthohub.com/organizations"
+      />
       
       <div className="border-b border-slate-200 pb-6">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">

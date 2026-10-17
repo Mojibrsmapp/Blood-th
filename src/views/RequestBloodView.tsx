@@ -14,6 +14,7 @@ import {
 import { BloodGroup, BloodRequest, Donor, UrgencyLevel } from '../types';
 import { DISTRICTS, INITIAL_HOSPITALS } from '../data/seedData';
 import { findMatchingDonors } from '../services/matchingService';
+import { SEO } from '../components/SEO';
 
 interface RequestBloodViewProps {
   donors: Donor[];
@@ -124,6 +125,12 @@ export const RequestBloodView: React.FC<RequestBloodViewProps> = ({
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <SEO
+        title="রক্তের জন্য অনুরোধ করুন - তাত্ক্ষণিক রক্তদাতা অনুসন্ধান"
+        description="রোগীর চিকিৎসার জন্য যে কোনো রক্তের গ্রুপের (A+, B+, O+, AB+) জরুরি রক্তের অনুরোধ পোস্ট করুন। নিকটস্থ রক্তদাতাদের তৎক্ষণাৎ যুক্ত করা হবে।"
+        canonical="https://blood.totthohub.com/request-blood"
+        keywords="রক্তের অনুরোধ, blood request bangladesh, রোগীর রক্ত, রক্তদাতা প্রয়োজন, তথ্যহাব ব্লাড"
+      />
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">

@@ -10,6 +10,7 @@ import {
   Award
 } from 'lucide-react';
 import { DISTRICTS } from '../data/seedData';
+import { SEO } from '../components/SEO';
 
 export const VolunteerPortalView: React.FC = () => {
   const [name, setName] = useState('');
@@ -27,6 +28,11 @@ export const VolunteerPortalView: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+      <SEO
+        title="স্বেচ্ছাসেবী জীবনরক্ষক হিসেবে যুক্ত হোন - তথ্যহাব ব্লাড"
+        description="জরুরি রক্তের প্রয়োজনে রোগীদের সহায়তা করতে তথ্যহাব ব্লাডের ভলান্টিয়ার কোরে যোগ দিন। রক্তদাতা ও গ্রহীতার মাঝে সমন্বয়ে নেতৃত্ব দিন।"
+        canonical="https://blood.totthohub.com/volunteers"
+      />
       
       <div className="text-center max-w-2xl mx-auto space-y-3">
         <div className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 bg-teal-50 px-3 py-1 rounded-full uppercase tracking-wider">

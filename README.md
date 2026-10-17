@@ -149,6 +149,59 @@ npm start
 docker compose up -d --build
 ```
 
+---
+
+## 🔄 লাইভ VPS-এ নতুন ফাইল আপডেট করার নিয়ম (Updating Live VPS Site)
+
+আপনার সার্ভারে (`/home/blood.totthohub.com/public_html`) ইতিমধ্যে **`blood-server`** নামে PM2 প্রসেস চালু রয়েছে। কোডে কোনো পরিবর্তন বা নতুন ফিচার আপডেট করতে নিচের সহজ ধাপগুলো অনুসরণ করুন:
+
+```bash
+# ধাপ ১: আপনার প্রজেক্ট ডিরেক্টরিতে যান
+cd /home/blood.totthohub.com/public_html
+
+# ধাপ ২: গিট থেকে নতুন ফাইল নামান (অথবা ফাইল আপলোড করুন)
+git pull origin main
+
+# ধাপ ৩: নতুন প্যাকেজ ইনস্টল করুন (যদি নতুন কোনো ডিপেন্ডেন্সি থাকে)
+npm install
+
+# ধাপ ৪: নতুন কোড প্রোডাকশনের জন্য বিল্ড করুন (বাধ্যতামূলক)
+npm run build
+
+# ধাপ ৫: চলমান PM2 প্রসেস "blood-server" রিস্টার্ট করুন (জিরো-ডাউনটাইম)
+pm2 reload blood-server
+# অথবা:
+pm2 restart blood-server
+
+# ধাপ ৬: সার্ভারের অবস্থা ও লাইভ লগ যাচাই করুন
+pm2 status
+pm2 logs blood-server --lines 20
+```
+
+> **টিপস**: `npm run build` রান করলে নতুন কোড `dist/` ফোল্ডারে বিল্ড হয়, এবং `pm2 reload blood-server` কমান্ডে ব্যবহারকারীদের কোনো ডাউনটাইম ছাড়াই নতুন সাইট লাইভ হয়ে যায়।
+
+---
+
+## 🔍 এসইও ও সার্চ কনসোল সেটআপ (SEO & Search Console)
+
+- **ডোমেইন**: `https://blood.totthohub.com/`
+- **Google Search Console ভেরিফিকেশন**: 
+  ```html
+  <meta name="google-site-verification" content="p_NKsy5KQ2aPXLr90x7fdrjRX-SI1z1RnvfM7ltV6yw" />
+  ```
+- **ডায়নামিক ইউজার ও রক্তদাতা এসইও (Dynamic User SEO)**:
+  - রক্তদাতার প্রোফাইল ভিউ (`/donor/:id`)-এ স্বয়ংক্রিয়ভাবে রক্তদাতার নাম, রক্তের গ্রুপ এবং এলাকার বিবরণ দিয়ে মেটা ট্যাগ ও `Person` Schema.org JSON-LD জেনারেট হয়।
+  - রক্তের গ্রুপ ভিত্তিক ল্যান্ডিং পেজসমূহ (`/donors/a-positive`, `/donors/o-positive` ইত্যাদি)।
+- **রোবট ও সাইটম্যাপ**:
+  - `https://blood.totthohub.com/robots.txt`
+  - `https://blood.totthohub.com/sitemap.xml`
+- **Schema.org Rich Snippets**:
+  - `WebSite` SearchAction
+  - `MedicalWebPage` & `Organization`
+  - `FAQPage` Schema (সাধারণ জিজ্ঞাসা সরাসরি গুগল সার্চ রেজাল্টে আসার জন্য)
+
+---
+
 ### ফায়ারওয়ালে Port 1000 ওপেন করার নিয়ম:
 ```bash
 sudo ufw allow 1000/tcp

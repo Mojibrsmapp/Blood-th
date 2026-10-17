@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Donor, BloodGroup } from '../types';
 import { DISTRICTS } from '../data/seedData';
+import { SEO } from '../components/SEO';
 
 interface FindDonorsViewProps {
   donors: Donor[];
@@ -129,8 +130,24 @@ export const FindDonorsView: React.FC<FindDonorsViewProps> = ({
     setCurrentPage(1);
   };
 
+  const seoTitle = selectedGroup 
+    ? `${selectedGroup} রক্তের রক্তদাতা খুঁজুন - জরুরি ডোনার তালিকা` 
+    : currentDistrictObj 
+    ? `${currentDistrictObj.bangla} জেলায় রক্তদাতা খুঁজুন` 
+    : 'রক্তদাতা খুঁজুন - সমগ্র বাংলাদেশের রক্তদাতা তালিকা';
+
+  const seoDescription = selectedGroup 
+    ? `${selectedGroup} গ্রুপের সক্রিয় রক্তদাতাদের তালিকা। জরুরি প্রয়োজনে সরাসরি ফোন কলে যোগাযোগ করে রক্ত সংগ্রহ করুন।` 
+    : 'রামু, কক্সবাজার, চট্টগ্রাম, ঢাকাসহ সমগ্র বাংলাদেশের স্বেচ্ছাসেবী রক্তদাতাদের তালিকা থেকে সহজে খুঁজুন এবং যোগাযোগ করুন।';
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <SEO 
+        title={seoTitle}
+        description={seoDescription}
+        canonical={`https://blood.totthohub.com/donors${groupSlug ? `/${groupSlug}` : ''}`}
+        keywords={`রক্তদাতা, ${selectedGroup || 'রক্তের গ্রুপ'}, ডোনার খুঁজুন, ব্লাড ডোনেশন, ${currentDistrictObj ? currentDistrictObj.bangla : 'বাংলাদেশ'}`}
+      />
       
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-6">

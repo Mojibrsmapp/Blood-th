@@ -1,0 +1,23 @@
+# Robots.txt for TotthoHub Blood (https://blood.totthohub.com)
+User-agent: *
+Allow: /
+Allow: /donors
+Allow: /donors/*
+Allow: /donor/*
+Allow: /request-blood
+Allow: /emergency
+Allow: /hospitals
+Allow: /campaigns
+Allow: /organizations
+Allow: /volunteers
+Allow: /about
+
+# Disallow private user consoles from indexing
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /api/*
+
+# XML Sitemap
+Sitemap: https://blood.totthohub.com/sitemap.xml

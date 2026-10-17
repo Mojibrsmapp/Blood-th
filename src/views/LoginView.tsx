@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { User as UserType } from '../types';
 import { getStoredDonors } from '../services/storageService';
+import { SEO } from '../components/SEO';
 
 interface LoginViewProps {
   onLoginSuccess: (user: UserType) => void;
@@ -155,6 +156,11 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
   return (
     <div className="max-w-md mx-auto px-4 py-12 space-y-6">
+      <SEO
+        title={activeRole === 'admin' ? 'অ্যাডমিন লগইন' : 'ব্যবহারকারী ও রক্তদাতা লগইন'}
+        description="তথ্যহাব ব্লাড অ্যাকাউন্টে প্রবেশ করুন। মোবাইল নম্বর দিয়ে রক্তদাতা প্রোফাইল বা অ্যাডমিন ক্রেডেনশিয়াল দিয়ে অ্যাডমিন কনসোলে লগইন করুন।"
+        canonical="https://blood.totthohub.com/login"
+      />
       
       {/* Back to Home */}
       <Link 

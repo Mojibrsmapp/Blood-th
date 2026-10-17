@@ -18,6 +18,7 @@ import {
   Edit3
 } from 'lucide-react';
 import { User as UserType, BloodRequest, Donor } from '../types';
+import { SEO } from '../components/SEO';
 
 interface UserProfileViewProps {
   currentUser: UserType;
@@ -63,6 +64,11 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <SEO
+        title={`আমার প্রোফাইল (${currentUser.name})`}
+        description="তথ্যহাব ব্লাড ব্যক্তিগত ইউজার প্রোফাইল। আপনার রক্তদান হিস্ট্রি, প্রাপ্যতা এবং সক্রিয় রক্তের অনুরোধ পর্যবেক্ষণ করুন।"
+        canonical="https://blood.totthohub.com/profile"
+      />
       
       {/* Toast */}
       {toast && (

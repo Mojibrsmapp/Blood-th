@@ -8,6 +8,7 @@ import {
   AlertTriangle,
   Droplet
 } from 'lucide-react';
+import { SEO } from '../components/SEO';
 
 export const AboutView: React.FC = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
@@ -35,8 +36,27 @@ export const AboutView: React.FC = () => {
     }
   ];
 
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map(item => ({
+      '@type': 'Question',
+      name: item.q,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.a,
+      },
+    })),
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
+      <SEO
+        title="আমাদের সম্পর্কে ও সাধারণ জিজ্ঞাসা (FAQ) - তথ্যহাব ব্লাড"
+        description="তথ্যহাব ব্লাড (TotthoHub Blood)-এর লক্ষ্য, উদ্দেশ্য, রক্তদানের বৈজ্ঞানিক নিয়মাবলী ও সাধারণ জিজ্ঞাসাসমূহ।"
+        canonical="https://blood.totthohub.com/about"
+        jsonLd={faqJsonLd}
+      />
       
       {/* Intro */}
       <div className="text-center max-w-2xl mx-auto space-y-3">
