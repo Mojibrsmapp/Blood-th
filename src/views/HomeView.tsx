@@ -893,88 +893,85 @@ export const HomeView: React.FC<HomeViewProps> = ({
       </section>
 
       {/* ========================================================
-          ১২. ⭐ Founder Message (প্রতিষ্ঠাতার বার্তা)
+          ১২. ⭐ Community Mission (আমাদের অঙ্গীকার ও যৌথ উদ্যোগ)
           ======================================================== */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-slate-900 text-white rounded-3xl p-8 sm:p-12 shadow-xl border border-slate-800">
+        <div className="bg-gradient-to-br from-slate-900 via-rose-950 to-slate-900 text-white rounded-3xl p-8 sm:p-12 shadow-xl border border-slate-800">
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             
-            {/* Founder Image / Portrait */}
-            <div className="lg:col-span-4 flex flex-col items-center text-center">
-              <div className="relative w-44 h-44 sm:w-52 sm:h-52 rounded-3xl overflow-hidden border-4 border-slate-800 shadow-2xl bg-slate-800 shrink-0">
-                <img
-                  src="https://bloodhelpbd.com/uploads/profiles/profile_1791030432_fba1c5db0eb8a920.jpg"
-                  alt="মুজিবুর রহমান - প্রতিষ্ঠাতা"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLElement;
-                    target.style.display = 'none';
-                    const fallback = target.parentElement?.querySelector('.founder-img-fallback');
-                    if (fallback) fallback.classList.remove('hidden');
-                  }}
-                />
-                <div className="founder-img-fallback w-full h-full bg-gradient-to-tr from-rose-900 to-slate-800 flex items-center justify-center text-4xl font-extrabold text-white hidden">
-                  MR
+            {/* Visual Icon & Quick Stats */}
+            <div className="lg:col-span-4 flex flex-col items-center text-center space-y-4">
+              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-rose-600/20 border-2 border-rose-500/40 flex items-center justify-center text-rose-500 shadow-xl">
+                <Heart className="w-12 h-12 fill-rose-600 animate-pulse" />
+              </div>
+
+              <div>
+                <h3 className="text-xl font-bold text-white tracking-tight">
+                  তথ্যহাব ব্লাড নেটওয়ার্ক
+                </h3>
+                <div className="text-xs text-rose-400 font-semibold mt-1">
+                  স্বেচ্ছাসেবী ও অলাভজনক মানবিক উদ্যোগ
+                </div>
+                <div className="text-[11px] text-slate-400 mt-0.5">
+                  ২৪/৭ জরুরি রক্তের সহায়তা প্ল্যাটফর্ম
                 </div>
               </div>
 
-              <div className="mt-4">
-                <h3 className="text-lg font-bold text-white">
-                  মুজিবুর রহমান
-                </h3>
-                <div className="text-xs text-rose-400 font-medium">
-                  প্রতিষ্ঠাতা, TotthoHub Blood
+              <div className="grid grid-cols-2 gap-3 w-full max-w-xs pt-2">
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
+                  <div className="text-xl font-black font-mono text-rose-400">২,৩০০+</div>
+                  <div className="text-[10px] text-slate-300 font-medium">নিবন্ধিত রক্তদাতা</div>
                 </div>
-                <div className="text-[11px] text-slate-400 mt-0.5">
-                  তথ্যপ্রযুক্তি উদ্যোক্তা ও সমাজকর্মী
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
+                  <div className="text-xl font-black font-mono text-emerald-400">১০০%</div>
+                  <div className="text-[10px] text-slate-300 font-medium">বিনামূল্যে সেবা</div>
                 </div>
               </div>
             </div>
 
-            {/* Founder Message Content */}
+            {/* Mission Content */}
             <div className="lg:col-span-8 space-y-4">
               
-              <div className="flex items-center gap-2 text-rose-500 font-bold text-xs uppercase tracking-wider">
-                <Quote className="w-5 h-5" />
-                <span>প্রতিষ্ঠাতার বার্তা</span>
+              <div className="flex items-center gap-2 text-rose-400 font-bold text-xs uppercase tracking-wider">
+                <Droplet className="w-4 h-4 fill-rose-400" />
+                <span>আমাদের অঙ্গীকার</span>
               </div>
 
-              <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white tracking-tight">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
                 মানুষের প্রয়োজনে মানুষই সবচেয়ে বড় শক্তি
               </h2>
 
               <div className="space-y-3 text-xs sm:text-sm text-slate-300 leading-relaxed">
                 <p>
-                  রক্তের প্রয়োজন কখনও বলে আসে না। একটি দুর্ঘটনা, একটি অপারেশন, একজন মায়ের প্রসবকালীন জটিলতা কিংবা কোনো অসুস্থ মানুষের চিকিৎসায় হঠাৎ করেই রক্তের প্রয়োজন হতে পারে।
+                  রক্তের প্রয়োজন কখনও বলে আসে না। একটি জরুরি অস্ত্রোপচার, কোনো মায়ের প্রসবকালীন জটিলতা, থ্যালাসেমিয়া কিংবা আকস্মিক দুর্ঘটনায় সঠিক সময়ে এক ব্যাগ রক্তই পারে একটি অমূল্য জীবন রক্ষা করতে।
                 </p>
                 <p>
-                  সেই কঠিন সময়ে প্রয়োজন হয় একজন উপযুক্ত রক্তদাতার। কিন্তু অনেক সময় রক্তদাতা আমাদের আশেপাশেই থাকেন, শুধু প্রয়োজনের মুহূর্তে তাকে খুঁজে পাওয়া যায় না।
+                  অনেক সময় উপযুক্ত রক্তদাতা আমাদের আশেপাশেই থাকেন, কিন্তু তথ্যের অভাব ও যোগাযোগের দূরত্বের কারণে সময়মতো রক্ত পাওয়া কঠিন হয়ে পড়ে।
+                </p>
+                <p className="text-rose-200 font-semibold">
+                  তথ্যহাব ব্লাডের লক্ষ্য হলো প্রযুক্তির সহায়তায় রক্তদাতা ও গ্রহীতাদের মাঝে একটি স্বচ্ছ, নির্ভরযোগ্য ও দ্রুত যোগাযোগের সেতুবন্ধন গড়ে তোলা।
                 </p>
                 <p>
-                  এই জায়গা থেকেই TotthoHub Blood-এর পথচলা।
-                </p>
-                <p>
-                  আমাদের লক্ষ্য হলো প্রযুক্তির মাধ্যমে রক্তদাতা ও রক্তের প্রয়োজন থাকা মানুষদের মধ্যে একটি সহজ, দ্রুত এবং দায়িত্বশীল যোগাযোগের সুযোগ তৈরি করা।
-                </p>
-                <p>
-                  আমরা বিশ্বাস করি, একজন মানুষের ছোট একটি উদ্যোগ অন্য একজন মানুষের জন্য বড় আশার কারণ হতে পারে।
-                </p>
-                <p className="text-rose-200 font-medium">
-                  আপনি রক্ত দিতে পারলে একজন রক্তদাতা হোন। প্রয়োজন হলে রক্তের অনুরোধ করুন। আর সম্ভব হলে অন্য একজনকে এই উদ্যোগের সঙ্গে যুক্ত করুন।
-                </p>
-                <p>
-                  মানুষের প্রয়োজনে মানুষের পাশে দাঁড়ানোর এই যাত্রায় আপনিও আমাদের সঙ্গে থাকুন।
+                  আপনি রক্ত দিতে সক্ষম হলে আজই একজন গর্বিত রক্তদাতা হোন। আর বিপদে পড়লে নিঃসঙ্কোচে জরুরি রক্তের অনুরোধ জানান।
                 </p>
               </div>
 
-              <div className="pt-2">
+              <div className="flex flex-wrap items-center gap-3 pt-3">
+                <Link
+                  to="/become-donor"
+                  className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-colors inline-flex items-center gap-2 cursor-pointer"
+                >
+                  <Heart className="w-4 h-4 fill-white" />
+                  <span>রক্তদাতা হিসেবে যুক্ত হোন</span>
+                </Link>
+
                 <Link
                   to="/about"
-                  className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors inline-flex items-center gap-2 cursor-pointer"
+                  className="px-5 py-2.5 bg-white/10 hover:bg-white/15 border border-white/20 text-white font-semibold text-xs sm:text-sm rounded-xl transition-colors inline-flex items-center gap-2 cursor-pointer"
                 >
-                  <span>আমাদের উদ্যোগ সম্পর্কে বিস্তারিত জানুন</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <span>আমাদের উদ্যোগ সম্পর্কে জানুন</span>
+                  <ArrowRight className="w-4 h-4 text-slate-400" />
                 </Link>
               </div>
 

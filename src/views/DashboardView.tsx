@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   ShieldAlert, 
   Users, 
@@ -18,7 +19,11 @@ import {
   Settings,
   Layers,
   Sparkles,
-  Calendar
+  Calendar,
+  Search,
+  Filter,
+  PlusCircle,
+  ExternalLink
 } from 'lucide-react';
 import { 
   User, 
@@ -31,6 +36,7 @@ import {
 } from '../types';
 import { SAMPLE_TURSO_LEGACY_DUMP } from '../data/seedData';
 import { executeTursoMigration } from '../services/migrationService';
+import { SEO } from '../components/SEO';
 
 interface DashboardViewProps {
   currentUser: User;
@@ -62,12 +68,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [migrationResult, setMigrationResult] = useState<MigrationResult | null>(null);
   const [isMigrating, setIsMigrating] = useState(false);
   const [hasCommittedMigration, setHasCommittedMigration] = useState(false);
+  
+  // Search & Pagination in Donors tab
   const [donorSearch, setDonorSearch] = useState('');
   const [donorPage, setDonorPage] = useState(1);
   const DASHBOARD_DONORS_PER_PAGE = 25;
 
-  // Current Donor simulation profile (Md. Rahim Ullah)
-  const currentDonorProfile = donors.find(d => d.phone === '01812345678') || donors[0];
+  // Filter in Requests tab
+  const [requestFilter, setRequestFilter] = useState<'all' | 'searching' | 'fulfilled'>('all');
+
+  // Dynamic Donor profile matching from real currentUser
+  const userPhoneClean = (currentUser.phone || '').replace(/[^0-9]/g, '');
+  const currentDonorProfile = donors.find(d => {
+    const dPhone = (d.phone || '').replace(/[^0-9]/g, '');
+    return (
+      (userPhoneClean && dPhone && (dPhone === userPhoneClean || (dPhone.length === 11 && userPhoneClean.length === 11 && dPhone.endsWith(userPhoneClean.slice(-10))))) ||
+      d.id === currentUser.id ||
+      d.userId === currentUser.id
+    );
+  });
 
   // Run Dry-Run Simulation
   const handleRunDryRun = () => {
@@ -93,8 +112,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     }, 800);
   };
 
+  const filteredRequests = requests.filter(r => {
+    if (requestFilter === 'all') return true;
+    if (requestFilter === 'fulfilled') return r.status === 'fulfilled';
+    return r.status !== 'fulfilled';
+  });
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
+      <SEO
+        title={`ড্যাশবোর্ড - ${currentUser.name}`}
+        description="তথ্যহাব ব্লাড সেন্ট্রাল ড্যাশবোর্ড। রক্তের অনুরোধ, রক্তদাতা নেটওয়ার্ক এবং লাইভ স্ট্যাটাস মনিটর করুন।"
+        canonical="https://blood.totthohub.com/dashboard"
+      />
       
       {/* Dashboard Top Banner */}
       <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -109,41 +139,39 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             স্বাগতম, {currentUser.name}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-            {currentUser.role === 'admin' ? 'কার্যনির্বাহী অ্যাডমিন ড্যাশবোর্ড: সক্রিয় রক্তের অনুরোধ পর্যবেক্ষণ, রক্তদাতা ভেরিফিকেশন, টার্সো মাইগ্রেশন ও রিপোর্ট পরিচালনা।' : 'রক্তদাতা ও রোগী ড্যাশবোর্ড: সক্রিয় রক্তের অনুরোধের অবস্থা ট্র্যাক, রক্তদান রেকর্ড ও প্রোফাইল ব্যবস্থাপনা।'}
+            {currentUser.role === 'admin' 
+              ? 'কার্যনির্বাহী অ্যাডমিন ড্যাশবোর্ড: সক্রিয় রক্তের অনুরোধ পর্যবেক্ষণ, রক্তদাতা ভেরিফিকেশন, টার্সো মাইগ্রেশন ও রিপোর্ট পরিচালনা।' 
+              : 'রক্তদাতা ও রোগী ড্যাশবোর্ড: সক্রিয় রক্তের অনুরোধের অবস্থা ট্র্যাক, রক্তদান রেকর্ড ও প্রোফাইল ব্যবস্থাপনা।'}
           </p>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+        <div className="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold w-full md:w-auto">
           <button
             onClick={() => setActiveTab('overview')}
-            className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'overview' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+            className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'overview' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
           >
             সারসংক্ষেপ
           </button>
 
-          {currentUser.role === 'admin' && (
-            <button
-              onClick={() => setActiveTab('requests')}
-              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'requests' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
-            >
-              অনুরোধসমূহ ({requests.length})
-            </button>
-          )}
+          <button
+            onClick={() => setActiveTab('requests')}
+            className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'requests' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+          >
+            অনুরোধসমূহ ({requests.length})
+          </button>
 
-          {currentUser.role === 'admin' && (
-            <button
-              onClick={() => setActiveTab('donors')}
-              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'donors' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
-            >
-              রক্তদাতাবৃন্দ ({donors.length})
-            </button>
-          )}
+          <button
+            onClick={() => setActiveTab('donors')}
+            className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'donors' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+          >
+            রক্তদাতাবৃন্দ ({donors.length})
+          </button>
 
           {currentUser.role === 'admin' && (
             <button
               onClick={() => setActiveTab('migration')}
-              className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 cursor-pointer ${activeTab === 'migration' ? 'bg-rose-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+              className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1 cursor-pointer ${activeTab === 'migration' ? 'bg-rose-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
             >
               <Database className="w-3.5 h-3.5" />
               <span>ডাটাবেজ মাইগ্রেশন</span>
@@ -153,18 +181,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {currentUser.role === 'admin' && (
             <button
               onClick={() => setActiveTab('audit')}
-              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'audit' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+              className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'audit' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
             >
               অডিট লগ
-            </button>
-          )}
-
-          {currentUser.role === 'donor' && (
-            <button
-              onClick={() => setActiveTab('my_donor')}
-              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'my_donor' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
-            >
-              আমার দাতা প্রোফাইল
             </button>
           )}
         </div>
@@ -205,20 +224,33 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
-          {/* Role specific quick widget */}
-          {currentUser.role === 'donor' && (
+          {/* Real Donor Availability Widget if user is a registered donor */}
+          {currentDonorProfile ? (
             <div className="bg-white p-6 rounded-3xl border border-slate-200 space-y-4">
-              <h3 className="text-base font-bold text-slate-900">আপনার বর্তমান রক্তদানের প্রাপ্যতা</h3>
-              <p className="text-xs text-slate-500">
-                লগইন আছেন <strong>{currentDonorProfile.name} ({currentDonorProfile.bloodGroup})</strong> হিসেবে ({currentDonorProfile.upazilaName})। রক্তদান বা ভ্রমণের সময় প্রাপ্যতা পরিবর্তন করুন।
-              </p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <span>আপনার বর্তমান রক্তদানের প্রাপ্যতা</span>
+                    <span className="px-2 py-0.5 rounded text-xs font-black bg-rose-600 text-white font-mono">
+                      {currentDonorProfile.bloodGroup}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    লগইন আছেন <strong>{currentDonorProfile.name}</strong> ({currentDonorProfile.upazilaName}, {currentDonorProfile.districtName})।
+                  </p>
+                </div>
+                <div className="text-xs font-semibold text-slate-700">
+                  মোট রক্তদান: <span className="font-bold text-slate-900">{currentDonorProfile.donationCount} বার</span>
+                </div>
+              </div>
 
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-2.5">
                 <button
+                  type="button"
                   onClick={() => onUpdateDonorAvailability(currentDonorProfile.id, 'available')}
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     currentDonorProfile.availability === 'available'
-                      ? 'bg-emerald-600 text-white shadow-sm'
+                      ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-500/20'
                       : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   }`}
                 >
@@ -226,10 +258,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => onUpdateDonorAvailability(currentDonorProfile.id, 'temporarily_unavailable')}
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     currentDonorProfile.availability === 'temporarily_unavailable'
-                      ? 'bg-amber-500 text-white shadow-sm'
+                      ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-500/20'
                       : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   }`}
                 >
@@ -237,10 +270,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => onUpdateDonorAvailability(currentDonorProfile.id, 'unavailable')}
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     currentDonorProfile.availability === 'unavailable'
-                      ? 'bg-slate-700 text-white shadow-sm'
+                      ? 'bg-slate-700 text-white shadow-sm ring-2 ring-slate-500/20'
                       : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   }`}
                 >
@@ -248,13 +282,39 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </button>
               </div>
             </div>
+          ) : (
+            <div className="bg-gradient-to-r from-rose-50 to-orange-50 border border-rose-200 p-6 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                  আপনি কি রক্তদানে আগ্রহী?
+                </h3>
+                <p className="text-xs text-slate-600 max-w-xl">
+                  আপনার রক্তের গ্রুপ ও এলাকা যুক্ত করে ১ মিনিটে স্বেচ্ছাসেবী রক্তদাতা তালিকায় নাম অন্তর্ভুক্ত করুন। জরুরি প্রয়োজনে যেকোনো মুমূর্ষু রোগীর প্রাণ বাঁচাতে আপনিও হতে পারেন একজন হিরো।
+                </p>
+              </div>
+              <Link
+                to="/become-donor"
+                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors whitespace-nowrap shrink-0"
+              >
+                রক্তদাতা হিসেবে নিবন্ধন করুন
+              </Link>
+            </div>
           )}
 
           {/* Recent Blood Requests in System */}
           <div className="bg-white p-6 rounded-3xl border border-slate-200 space-y-4">
-            <h3 className="text-base font-bold text-slate-900">সাম্প্রতিক রক্তের অনুরোধসমূহ</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-900">সাম্প্রতিক রক্তের অনুরোধসমূহ</h3>
+              <button
+                onClick={() => setActiveTab('requests')}
+                className="text-xs font-bold text-rose-600 hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <span>সবগুলো দেখুন ({requests.length})</span>
+              </button>
+            </div>
+            
             <div className="divide-y divide-slate-100 text-xs">
-              {requests.map(req => (
+              {requests.slice(0, 5).map(req => (
                 <div key={req.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="space-y-0.5">
                     <div className="font-bold text-slate-900 flex items-center gap-2">
@@ -292,214 +352,101 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       )}
 
-      {/* TAB 2: TURSO DATABASE MIGRATION ENGINE (Sections 51-59 of blueprint) */}
-      {activeTab === 'migration' && currentUser.role === 'admin' && (
-        <div className="space-y-8">
-          
-          <div className="bg-gradient-to-r from-slate-900 via-rose-950 to-slate-900 text-white p-6 sm:p-8 rounded-3xl shadow-sm space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-rose-400 text-xs font-bold uppercase tracking-wider">
-                <Database className="w-4 h-4" />
-                <span>Turso & RoktoDao Data Migration Engine</span>
-              </div>
-              <span className="flex items-center gap-1.5 text-xs font-mono font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800/60 px-3 py-1 rounded-full">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Connected: rokto-rokto.aws-ap-northeast-1.turso.io</span>
-              </span>
+      {/* TAB 2: REQUESTS MANAGEMENT */}
+      {activeTab === 'requests' && (
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">
+                রক্তের অনুরোধ ব্যবস্থাপনা ({requests.length})
+              </h2>
+              <p className="text-xs text-slate-500">
+                মুহূর্তের জরুরি রক্তের চাহিদা পর্যবেক্ষণ ও আপডেট করুন
+              </p>
             </div>
 
-            <h2 className="text-2xl font-bold tracking-tight">
-              Live Turso Database (libsql://rokto-rokto.aws-ap-northeast-1.turso.io)
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-              Cleaned, normalized, deduplicated and imported donor data from live Turso SQLite tables.
-              Enforced Bangladeshi 11-digit mobile normalization (+880 cleaning), blood group canonicalization (e.g. "A_PLUS" / "b+" → "A+" / "B+"), and canonical location resolution.
-            </p>
+            <div className="flex items-center gap-2">
+              <div className="flex rounded-xl bg-slate-100 p-1 text-xs font-semibold">
+                <button
+                  onClick={() => setRequestFilter('all')}
+                  className={`px-3 py-1 rounded-lg cursor-pointer ${requestFilter === 'all' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'}`}
+                >
+                  সব ({requests.length})
+                </button>
+                <button
+                  onClick={() => setRequestFilter('searching')}
+                  className={`px-3 py-1 rounded-lg cursor-pointer ${requestFilter === 'searching' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'}`}
+                >
+                  চলমান ({requests.filter(r => r.status !== 'fulfilled').length})
+                </button>
+                <button
+                  onClick={() => setRequestFilter('fulfilled')}
+                  className={`px-3 py-1 rounded-lg cursor-pointer ${requestFilter === 'fulfilled' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'}`}
+                >
+                  সম্পন্ন ({requests.filter(r => r.status === 'fulfilled').length})
+                </button>
+              </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-2 text-xs">
-              <div className="bg-white/10 backdrop-blur-sm p-3 rounded-xl">
-                <span className="text-slate-400 block text-[11px]">Database Engine:</span>
-                <span className="font-bold text-white font-mono">libSQL / Turso</span>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm p-3 rounded-xl">
-                <span className="text-slate-400 block text-[11px]">Region:</span>
-                <span className="font-bold text-white">AWS Tokyo (ap-northeast-1)</span>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm p-3 rounded-xl">
-                <span className="text-slate-400 block text-[11px]">Raw Donors:</span>
-                <span className="font-bold text-white font-mono">2,473 in DB</span>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm p-3 rounded-xl">
-                <span className="text-slate-400 block text-[11px]">Cleaned & Active:</span>
-                <span className="font-bold text-emerald-400 font-mono">2,349 Donors Active</span>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-3 pt-2">
-              <button
-                disabled={isMigrating}
-                onClick={handleRunDryRun}
-                className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold border border-slate-700 flex items-center gap-2 transition-colors disabled:opacity-50"
+              <Link
+                to="/request-blood"
+                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl flex items-center gap-1 shadow-xs"
               >
-                <Play className="w-3.5 h-3.5 text-amber-400" />
-                <span>Run Dry Run Simulation (--dry-run)</span>
-              </button>
-
-              <button
-                disabled={isMigrating}
-                onClick={handleCommitMigration}
-                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2 transition-colors disabled:opacity-50"
-              >
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Re-Sync & Commit All Turso Donors (2,349)</span>
-              </button>
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">নতুন অনুরোধ</span>
+              </Link>
             </div>
           </div>
 
-          {/* Raw Legacy Data Queue Preview */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <FileText className="w-4 h-4 text-slate-600" />
-                <span>Raw Legacy Turso Dump (Source: rokto_dao_turso.db)</span>
-              </h3>
-              <span className="text-xs text-slate-500 font-mono">
-                {migrationData.length} Records Loaded
-              </span>
-            </div>
+          <div className="divide-y divide-slate-100 text-xs">
+            {filteredRequests.map(req => (
+              <div key={req.id} className="py-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base font-extrabold text-slate-900">{req.patientName}</span>
+                    <span className="px-2 py-0.5 rounded text-xs font-black bg-rose-600 text-white font-mono">
+                      {req.bloodGroup} · {req.units} ব্যাগ
+                    </span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded font-semibold ${
+                      req.urgency === 'critical' ? 'text-red-700 bg-red-50' : 'text-slate-600 bg-slate-100'
+                    }`}>
+                      {req.urgency === 'critical' ? 'অতি জরুরি' : 'সাধারণ'}
+                    </span>
+                  </div>
+                  <div className="text-slate-600">
+                    হাসপাতাল: <strong className="text-slate-800">{req.hospitalName}</strong> ({req.upazilaName}, {req.districtName}) · যোগাযোগের নম্বর: <span className="font-mono text-slate-800">{req.requesterPhone}</span>
+                  </div>
+                  <div className="text-[11px] text-slate-400">
+                    প্রয়োজনের তারিখ: {req.neededDate} · রোগীর সমস্যা: {req.description || 'জরুরি অস্ত্রোপচার'}
+                  </div>
+                </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 text-slate-400 uppercase tracking-wider text-[10px]">
-                    <th className="py-2 pr-4">Old ID</th>
-                    <th className="py-2 pr-4">Full Name</th>
-                    <th className="py-2 pr-4">Raw Phone</th>
-                    <th className="py-2 pr-4">Raw Blood</th>
-                    <th className="py-2 pr-4">Raw Location</th>
-                    <th className="py-2">Legacy Note</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 font-mono text-[11px] text-slate-700">
-                  {migrationData.map(r => (
-                    <tr key={r.old_id} className="hover:bg-slate-50">
-                      <td className="py-2.5 pr-4 text-slate-400">#{r.old_id}</td>
-                      <td className="py-2.5 pr-4 font-sans font-medium text-slate-900">{r.full_name}</td>
-                      <td className="py-2.5 pr-4">{r.raw_phone}</td>
-                      <td className="py-2.5 pr-4 text-rose-600 font-bold">{r.raw_blood}</td>
-                      <td className="py-2.5 pr-4 font-sans">{r.raw_location}</td>
-                      <td className="py-2.5 font-sans text-slate-500">{r.legacy_notes}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Migration Report (Item 59 of blueprint) */}
-          {migrationResult && (
-            <div className="bg-white p-6 sm:p-8 rounded-3xl border-2 border-slate-200 shadow-sm space-y-6 animate-in fade-in">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900">
-                    Migration Execution Report
-                  </h3>
-                  <span className={`text-xs font-semibold ${migrationResult.isDryRun ? 'text-amber-600' : 'text-emerald-600'}`}>
-                    {migrationResult.isDryRun ? 'SIMULATION ONLY (DRY-RUN)' : 'COMMITTED TO DATABASE'}
+                <div className="flex items-center gap-2">
+                  <span className={`text-[11px] font-bold px-2.5 py-1 rounded-lg ${
+                    req.status === 'fulfilled'
+                      ? 'bg-emerald-50 text-emerald-700'
+                      : req.status === 'matched'
+                        ? 'bg-blue-50 text-blue-700'
+                        : 'bg-amber-50 text-amber-700'
+                  }`}>
+                    {req.status === 'fulfilled' ? '✓ সম্পন্ন হয়েছে' : req.status === 'matched' ? 'ম্যাচড দাতা পাওয়া গেছে' : 'দাতা খোঁজা হচ্ছে'}
                   </span>
-                </div>
-                <div className="text-xs text-slate-400 font-mono">
-                  Execution time: {migrationResult.executionTimeMs} ms
+
+                  {req.status !== 'fulfilled' && (
+                    <button
+                      onClick={() => onUpdateRequestStatus(req.id, 'fulfilled')}
+                      className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-colors cursor-pointer"
+                    >
+                      সম্পন্ন করুন
+                    </button>
+                  )}
                 </div>
               </div>
-
-              {/* Statistics row */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-                <div className="p-3 bg-slate-50 rounded-xl">
-                  <span className="text-[11px] text-slate-500 block">Total Processed</span>
-                  <span className="text-xl font-bold font-mono text-slate-900">{migrationResult.totalProcessed}</span>
-                </div>
-                <div className="p-3 bg-emerald-50 rounded-xl">
-                  <span className="text-[11px] text-emerald-700 block">Imported / Clean</span>
-                  <span className="text-xl font-bold font-mono text-emerald-700">{migrationResult.successCount}</span>
-                </div>
-                <div className="p-3 bg-amber-50 rounded-xl">
-                  <span className="text-[11px] text-amber-700 block">Duplicates Skipped</span>
-                  <span className="text-xl font-bold font-mono text-amber-700">{migrationResult.duplicatesSkipped}</span>
-                </div>
-                <div className="p-3 bg-red-50 rounded-xl">
-                  <span className="text-[11px] text-red-700 block">Invalid Formats</span>
-                  <span className="text-xl font-bold font-mono text-red-700">{migrationResult.invalidCount}</span>
-                </div>
-              </div>
-
-              {/* Records Breakdown Table */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Mapped & Normalized Records Details
-                </h4>
-                <div className="overflow-x-auto border border-slate-200 rounded-xl">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase border-b border-slate-200">
-                      <tr>
-                        <th className="p-2.5">Name</th>
-                        <th className="p-2.5">Blood Cleaned</th>
-                        <th className="p-2.5">Phone (Norm)</th>
-                        <th className="p-2.5">Mapped District</th>
-                        <th className="p-2.5">Status</th>
-                        <th className="p-2.5">Details</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {migrationResult.records.map((r, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50">
-                          <td className="p-2.5 font-medium text-slate-900">{r.originalName}</td>
-                          <td className="p-2.5">
-                            <span className="text-rose-600 font-bold font-mono">{r.cleanedBlood}</span>
-                            <span className="text-[10px] text-slate-400 block">from "{r.originalBlood}"</span>
-                          </td>
-                          <td className="p-2.5 font-mono text-slate-800">
-                            {r.normalizedPhone || '—'}
-                          </td>
-                          <td className="p-2.5 text-slate-600">{r.mappedDistrict}</td>
-                          <td className="p-2.5">
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                              r.status === 'imported'
-                                ? 'bg-emerald-50 text-emerald-700'
-                                : r.status === 'duplicate'
-                                  ? 'bg-amber-50 text-amber-700'
-                                  : 'bg-red-50 text-red-700'
-                            }`}>
-                              {r.status.toUpperCase()}
-                            </span>
-                          </td>
-                          <td className="p-2.5 text-[11px] text-slate-500">{r.message}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Console Logs */}
-              <div className="space-y-1.5">
-                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Pipeline Execution Logs
-                </h4>
-                <div className="p-4 bg-slate-950 text-emerald-400 rounded-xl font-mono text-[11px] max-h-48 overflow-y-auto space-y-1">
-                  {migrationResult.logs.map((log, i) => (
-                    <div key={i}>{log}</div>
-                  ))}
-                </div>
-              </div>
-
-            </div>
-          )}
-
+            ))}
+          </div>
         </div>
       )}
 
-      {/* TAB 3: DONOR VERIFICATION & DIRECTORY MANAGEMENT */}
+      {/* TAB 3: DONOR DIRECTORY & VERIFICATION */}
       {activeTab === 'donors' && (() => {
         const filteredDashboardDonors = donors.filter(d => {
           if (!donorSearch) return true;
@@ -523,23 +470,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h3 className="text-base font-bold text-slate-900">
-                  Registered Donors & Verification Queue ({donors.length})
+                  নিবন্ধিত রক্তদাতাবৃন্দ ({donors.length} জন)
                 </h3>
                 <p className="text-xs text-slate-500">
-                  Manage donor verification, photos, locations, and active availability
+                  রক্তদাতার সক্রিয় প্রাপ্যতা, এলাকা এবং ভেরিফিকেশন স্ট্যাটাস
                 </p>
               </div>
 
               <div className="w-full sm:w-64">
                 <input
                   type="text"
-                  placeholder="Search name, phone, district..."
+                  placeholder="নাম, ফোন বা এলাকা খুঁজুন..."
                   value={donorSearch}
                   onChange={(e) => {
                     setDonorSearch(e.target.value);
                     setDonorPage(1);
                   }}
-                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
                 />
               </div>
             </div>
@@ -576,28 +523,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                             ? 'bg-emerald-50 text-emerald-700'
                             : 'bg-slate-100 text-slate-600'
                         }`}>
-                          {donor.verificationStatus.replace('_', ' ').toUpperCase()}
+                          {donor.verificationStatus === 'blood_group_verified' ? 'যাচাইকৃত' : 'নিবন্ধিত'}
                         </span>
                       </div>
                       <div className="text-slate-500">
-                        <span className="font-medium text-slate-700">{donor.area}</span> · {donor.districtName} · Phone: <span className="font-mono text-slate-800">{donor.phone}</span> · {donor.donationCount} Donations
+                        <span className="font-medium text-slate-700">{donor.area}</span> · {donor.districtName} · ফোন: <span className="font-mono text-slate-800">{donor.phone}</span> · {donor.donationCount} বার রক্তদান
                       </div>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    {donor.verificationStatus !== 'blood_group_verified' && (
+                    {currentUser.role === 'admin' && donor.verificationStatus !== 'blood_group_verified' && (
                       <button
                         onClick={() => onVerifyDonor(donor.id)}
-                        className="px-3 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold rounded-lg transition-colors"
+                        className="px-3 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold rounded-lg transition-colors cursor-pointer"
                       >
-                        Verify Donor
+                        ভেরিফাই করুন
                       </button>
                     )}
                     <span className={`text-[11px] font-semibold ${
                       donor.availability === 'available' ? 'text-emerald-600' : 'text-slate-400'
                     }`}>
-                      {donor.availability === 'available' ? '🟢 Available' : 'Resting'}
+                      {donor.availability === 'available' ? '🟢 প্রস্তুত' : '🟡 বিশ্রামে'}
                     </span>
                   </div>
                 </div>
@@ -608,22 +555,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             {totalPages > 1 && (
               <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                 <span>
-                  Page {donorPage} of {totalPages} ({filteredDashboardDonors.length} donors)
+                  পৃষ্ঠা {donorPage} / {totalPages} (মোট {filteredDashboardDonors.length} জন)
                 </span>
                 <div className="flex items-center gap-2">
                   <button
                     disabled={donorPage <= 1}
                     onClick={() => setDonorPage(p => Math.max(1, p - 1))}
-                    className="px-3 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40"
+                    className="px-3 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
                   >
-                    Previous
+                    পূর্ববর্তী
                   </button>
                   <button
                     disabled={donorPage >= totalPages}
                     onClick={() => setDonorPage(p => Math.min(totalPages, p + 1))}
-                    className="px-3 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40"
+                    className="px-3 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
                   >
-                    Next
+                    পরবর্তী
                   </button>
                 </div>
               </div>
@@ -632,7 +579,204 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         );
       })()}
 
-      {/* TAB 4: AUDIT LOGS (Section 44 of blueprint) */}
+      {/* TAB 4: TURSO DATABASE MIGRATION ENGINE (Admin Only) */}
+      {activeTab === 'migration' && currentUser.role === 'admin' && (
+        <div className="space-y-8">
+          
+          <div className="bg-gradient-to-r from-slate-900 via-rose-950 to-slate-900 text-white p-6 sm:p-8 rounded-3xl shadow-sm space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-rose-400 text-xs font-bold uppercase tracking-wider">
+                <Database className="w-4 h-4" />
+                <span>Turso SQLite Data Engine</span>
+              </div>
+              <span className="flex items-center gap-1.5 text-xs font-mono font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800/60 px-3 py-1 rounded-full">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Connected: rokto-rokto.aws-ap-northeast-1.turso.io</span>
+              </span>
+            </div>
+
+            <h2 className="text-2xl font-bold tracking-tight">
+              Live Turso Database (libsql://rokto-rokto.aws-ap-northeast-1.turso.io)
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
+              স্বয়ংক্রিয় ক্লিনড, নরমালাইজড এবং ডুপ্লিকেটমুক্ত টার্সো ডাটাবেজ। বাংলাদেশি ১১ ডিজিট ফোন নম্বর (+৮৮০ ক্লিন), রক্তের গ্রুপ ক্যানোনিকালাইজেশন এবং জেলা-উপজেলা ম্যাপিং সমন্বিত।
+            </p>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-2 text-xs">
+              <div className="bg-white/10 backdrop-blur-sm p-3 rounded-xl">
+                <span className="text-slate-400 block text-[11px]">Database Engine:</span>
+                <span className="font-bold text-white font-mono">libSQL / Turso</span>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm p-3 rounded-xl">
+                <span className="text-slate-400 block text-[11px]">Region:</span>
+                <span className="font-bold text-white">AWS Tokyo (ap-northeast-1)</span>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm p-3 rounded-xl">
+                <span className="text-slate-400 block text-[11px]">Raw Donors:</span>
+                <span className="font-bold text-white font-mono">2,473 in DB</span>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm p-3 rounded-xl">
+                <span className="text-slate-400 block text-[11px]">Cleaned & Active:</span>
+                <span className="font-bold text-emerald-400 font-mono">2,349 Donors Active</span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3 pt-2">
+              <button
+                disabled={isMigrating}
+                onClick={handleRunDryRun}
+                className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold border border-slate-700 flex items-center gap-2 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                <Play className="w-3.5 h-3.5 text-amber-400" />
+                <span>যাচাইকরণ পরীক্ষা (ড্রাই-রান)</span>
+              </button>
+
+              <button
+                disabled={isMigrating}
+                onClick={handleCommitMigration}
+                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>ডাটাবেজ সিঙ্ক ও স্থায়ী সংরক্ষণ (২,৩৪৯ রক্তদাতা)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Raw Legacy Data Queue Preview */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-slate-600" />
+                <span>Raw Legacy Turso Dump (Source: rokto_dao_turso.db)</span>
+              </h3>
+              <span className="text-xs text-slate-500 font-mono">
+                {migrationData.length} Records Loaded
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-slate-100 text-slate-400 text-[11px]">
+                    <th className="pb-2">Old ID</th>
+                    <th className="pb-2">Raw Name</th>
+                    <th className="pb-2">Raw Phone</th>
+                    <th className="pb-2">Raw Blood</th>
+                    <th className="pb-2">Raw Location</th>
+                    <th className="pb-2">Notes</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-mono text-[11px]">
+                  {migrationData.map(r => (
+                    <tr key={r.old_id} className="hover:bg-slate-50">
+                      <td className="py-2 text-slate-400">#{r.old_id}</td>
+                      <td className="py-2 font-medium font-sans text-slate-900">{r.full_name}</td>
+                      <td className="py-2 text-slate-600">{r.raw_phone}</td>
+                      <td className="py-2 font-bold text-rose-600">{r.raw_blood}</td>
+                      <td className="py-2 text-slate-500 font-sans">{r.raw_location}</td>
+                      <td className="py-2 text-[10px] text-slate-400 font-sans">{r.legacy_notes}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Migration Result Execution Window */}
+          {migrationResult && (
+            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                      migrationResult.isDryRun ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+                    }`}>
+                      {migrationResult.isDryRun ? 'ড্রাই-রান মোড (কোনো পরিবর্তন স্থায়ী হয়নি)' : 'ডাটাবেজে সফলভাবে সংরক্ষণ সম্পন্ন'}
+                    </span>
+                    <span className="text-xs text-slate-400 font-mono">
+                      Execution Time: {migrationResult.executionTimeMs}ms
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 mt-1">
+                    মাইগ্রেশন ও ডি-ডুপ্লিকেশন এক্সিকিউশন রিপোর্ট
+                  </h3>
+                </div>
+
+                <div className="flex items-center gap-2 font-mono text-xs">
+                  <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-lg font-bold">
+                    ✓ Clean: {migrationResult.successCount}
+                  </span>
+                  <span className="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-lg font-bold">
+                    ⚠ Duplicates: {migrationResult.duplicatesSkipped}
+                  </span>
+                  <span className="px-2.5 py-1 bg-red-50 text-red-700 rounded-lg font-bold">
+                    ✕ Malformed: {migrationResult.invalidCount}
+                  </span>
+                </div>
+              </div>
+
+              {/* Records Breakdown Table */}
+              <div className="overflow-x-auto border border-slate-100 rounded-2xl">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 text-slate-500 font-semibold">
+                    <tr>
+                      <th className="p-2.5">Original Name</th>
+                      <th className="p-2.5">Clean Blood</th>
+                      <th className="p-2.5">Clean Phone</th>
+                      <th className="p-2.5">Mapped District</th>
+                      <th className="p-2.5">Status</th>
+                      <th className="p-2.5">Details</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {migrationResult.records.map((r, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50">
+                        <td className="p-2.5 font-medium text-slate-900">{r.originalName}</td>
+                        <td className="p-2.5">
+                          <span className="text-rose-600 font-bold font-mono">{r.cleanedBlood}</span>
+                          <span className="text-[10px] text-slate-400 block">from "{r.originalBlood}"</span>
+                        </td>
+                        <td className="p-2.5 font-mono text-slate-800">
+                          {r.normalizedPhone || '—'}
+                        </td>
+                        <td className="p-2.5 text-slate-600">{r.mappedDistrict}</td>
+                        <td className="p-2.5">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                            r.status === 'imported'
+                              ? 'bg-emerald-50 text-emerald-700'
+                              : r.status === 'duplicate'
+                                ? 'bg-amber-50 text-amber-700'
+                                : 'bg-red-50 text-red-700'
+                          }`}>
+                            {r.status.toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="p-2.5 text-[11px] text-slate-500">{r.message}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Console Logs */}
+              <div className="space-y-1.5">
+                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Pipeline Execution Logs
+                </h4>
+                <div className="p-4 bg-slate-950 text-emerald-400 rounded-xl font-mono text-[11px] max-h-48 overflow-y-auto space-y-1">
+                  {migrationResult.logs.map((log, i) => (
+                    <div key={i}>{log}</div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          )}
+
+        </div>
+      )}
+
+      {/* TAB 5: AUDIT LOGS (Admin Only) */}
       {activeTab === 'audit' && currentUser.role === 'admin' && (
         <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
@@ -640,7 +784,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               অডিট লগ ও সিস্টেম অ্যাকশন হিস্ট্রি
             </h3>
             <span className="text-xs text-slate-400 font-mono">
-              অপরিবর্তনশীল রেকর্ড
+              অপরিবর্তনশীল সিকিউরিটি লগ
             </span>
           </div>
 

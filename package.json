@@ -9,7 +9,8 @@
     "preview": "vite preview --port=1000 --host=0.0.0.0",
     "start": "node server.js",
     "clean": "rm -rf dist",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "import:csv": "node scripts/import_bbms_csv.js"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

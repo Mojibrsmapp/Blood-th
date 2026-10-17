@@ -52,19 +52,30 @@ export const DEFAULT_USER: User = {
 
 export const FOUNDER_USER: User = DEFAULT_USER;
 
+const CUSTOM_DONORS_KEY = 'totthohub_blood_custom_donors';
+const STATUS_OVERRIDES_KEY = 'totthohub_blood_donor_status_overrides';
+
 export function getStoredDonors(): Donor[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEYS.DONORS);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEYS.DONORS, JSON.stringify(INITIAL_DONORS));
-      return INITIAL_DONORS;
-    }
-    const parsed = JSON.parse(raw);
-    if (parsed.length <= 15 && INITIAL_DONORS.length > 50) {
-      localStorage.setItem(STORAGE_KEYS.DONORS, JSON.stringify(INITIAL_DONORS));
-      return INITIAL_DONORS;
-    }
-    return parsed;
+    const rawCustom = localStorage.getItem(CUSTOM_DONORS_KEY);
+    const customDonors: Donor[] = rawCustom ? JSON.parse(rawCustom) : [];
+
+    const rawOverrides = localStorage.getItem(STATUS_OVERRIDES_KEY);
+    const overrides: Record<string, Partial<Donor>> = rawOverrides ? JSON.parse(rawOverrides) : {};
+
+    const customIds = new Set(customDonors.map(d => d.id));
+    const customPhones = new Set(customDonors.map(d => (d.phone || '').replace(/\D/g, '')));
+
+    const mergedBase = INITIAL_DONORS.filter(d => 
+      !customIds.has(d.id) && !customPhones.has((d.phone || '').replace(/\D/g, ''))
+    ).map(d => {
+      if (overrides[d.id]) {
+        return { ...d, ...overrides[d.id] };
+      }
+      return d;
+    });
+
+    return [...customDonors, ...mergedBase];
   } catch {
     return INITIAL_DONORS;
   }
@@ -72,7 +83,33 @@ export function getStoredDonors(): Donor[] {
 
 export function saveDonors(donors: Donor[]) {
   try {
-    localStorage.setItem(STORAGE_KEYS.DONORS, JSON.stringify(donors));
+    // Save newly created custom donors
+    const customDonors = donors.filter(d => 
+      d.id.startsWith('donor-custom-') || 
+      d.id.startsWith('donor-17') || 
+      d.id.startsWith('donor-20') ||
+      !INITIAL_DONORS.some(base => base.id === d.id)
+    );
+    if (customDonors.length > 0) {
+      localStorage.setItem(CUSTOM_DONORS_KEY, JSON.stringify(customDonors.slice(0, 1000)));
+    }
+
+    // Save status overrides (availability or verification changes)
+    const overrides: Record<string, Partial<Donor>> = {};
+    for (const d of donors) {
+      const base = INITIAL_DONORS.find(b => b.id === d.id);
+      if (base) {
+        if (base.availability !== d.availability || base.verificationStatus !== d.verificationStatus || base.donationCount !== d.donationCount) {
+          overrides[d.id] = {
+            availability: d.availability,
+            verificationStatus: d.verificationStatus,
+            donationCount: d.donationCount,
+            lastDonationDate: d.lastDonationDate
+          };
+        }
+      }
+    }
+    localStorage.setItem(STATUS_OVERRIDES_KEY, JSON.stringify(overrides));
   } catch (e) {
     console.error('Failed to save donors to localStorage', e);
   }

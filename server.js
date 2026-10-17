@@ -11,7 +11,10 @@ const app = express();
 const PORT = parseInt(process.env.PORT || '1000', 10);
 const HOST = process.env.HOST || '0.0.0.0';
 
+const GOOGLE_VERIFICATION_TAG = '<meta name="google-site-verification" content="p_NKsy5KQ2aPXLr90x7fdrjRX-SI1z1RnvfM7ltV6yw" />';
+
 const distPath = path.join(__dirname, 'dist');
+const indexHtmlPath = path.join(distPath, 'index.html');
 
 // Middleware to parse JSON payloads if needed for future API endpoints
 app.use(express.json());
@@ -27,18 +30,105 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// API Endpoint to check BBMS CSV status
+app.get('/api/admin/csv-status', (req, res) => {
+  const csvFile = path.join(__dirname, 'bbms_donors_backup_24700.csv');
+  const exists = fs.existsSync(csvFile);
+  let size = 0;
+  if (exists) {
+    try {
+      size = fs.statSync(csvFile).size;
+    } catch {}
+  }
+  res.json({
+    fileName: 'bbms_donors_backup_24700.csv',
+    exists,
+    sizeBytes: size,
+    sizeMB: (size / (1024 * 1024)).toFixed(2),
+    path: csvFile
+  });
+});
+
+// API Endpoint to get donors count & statistics
+app.get('/api/donors/stats', (req, res) => {
+  const jsonPath = path.join(__dirname, 'public', 'data', 'donors.json');
+  const fallbackPath = path.join(__dirname, 'src', 'data', 'tursoImportedDonors.json');
+  let donors = [];
+  try {
+    if (fs.existsSync(jsonPath)) {
+      donors = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+    } else if (fs.existsSync(fallbackPath)) {
+      donors = JSON.parse(fs.readFileSync(fallbackPath, 'utf8'));
+    }
+  } catch {}
+  
+  res.json({
+    totalDonors: donors.length,
+    active: donors.filter(d => d.availability === 'available').length,
+    groups: donors.reduce((acc, d) => {
+      acc[d.bloodGroup] = (acc[d.bloodGroup] || 0) + 1;
+      return acc;
+    }, {})
+  });
+});
+
+// Direct Google Search Console HTML File verification route fallback
+app.get('/google:hash.html', (req, res) => {
+  const fileName = `google${req.params.hash}.html`;
+  const filePath = path.join(distPath, fileName);
+  if (fs.existsSync(filePath)) {
+    return res.sendFile(filePath);
+  }
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.send(`google-site-verification: ${fileName}`);
+});
+
+// Helper to serve index.html with guaranteed Google Search Console verification meta tag
+function sendVerifiedIndexHtml(res) {
+  try {
+    if (!fs.existsSync(indexHtmlPath)) {
+      throw new Error('dist/index.html not found');
+    }
+
+    let html = fs.readFileSync(indexHtmlPath, 'utf8');
+
+    // Guarantee the verification meta tag is always present in <head>
+    if (!html.includes('google-site-verification')) {
+      if (html.includes('<head>')) {
+        html = html.replace('<head>', `<head>\n    ${GOOGLE_VERIFICATION_TAG}`);
+      } else if (html.includes('<head ')) {
+        html = html.replace(/<head[^>]*>/, `$& \n    ${GOOGLE_VERIFICATION_TAG}`);
+      }
+    }
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    return res.send(html);
+  } catch {
+    return res.sendFile(indexHtmlPath);
+  }
+}
+
 // Check if production build exists
 if (fs.existsSync(distPath)) {
+  // Explicit route for root URL to guarantee verified HTML delivery
+  app.get('/', (req, res) => {
+    sendVerifiedIndexHtml(res);
+  });
+
   // Serve static assets with caching headers
   app.use(
     express.static(distPath, {
       maxAge: '1d',
+      index: false, // Handle index.html via our verified handler
       setHeaders: (res, filePath) => {
         // Assets with content hashes can be cached aggressively
         if (filePath.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
           res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-        } else if (filePath.endsWith('index.html')) {
-          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        } else if (filePath.endsWith('robots.txt') || filePath.endsWith('sitemap.xml')) {
+          res.setHeader('Cache-Control', 'public, max-age=3600');
         }
       },
     })
@@ -46,7 +136,7 @@ if (fs.existsSync(distPath)) {
 
   // Fallback for Single Page Application client-side routing (React Router)
   app.get('*', (req, res) => {
-    res.sendFile(path.join(distPath, 'index.html'));
+    sendVerifiedIndexHtml(res);
   });
 } else {
   // Informative fallback in case build has not been run yet
@@ -56,6 +146,7 @@ if (fs.existsSync(distPath)) {
       <html lang="bn">
       <head>
         <meta charset="UTF-8">
+        ${GOOGLE_VERIFICATION_TAG}
         <title>TotthoHub Blood - Build Required</title>
         <style>
           body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: center; padding: 50px; background: #fff5f5; color: #1e293b; }

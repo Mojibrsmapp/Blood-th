@@ -21,15 +21,28 @@ export const DISTRICTS = [
   { id: 'narayanganj', name: 'Narayanganj', bangla: 'নারায়ণগঞ্জ', upazilas: ['Narayanganj Sadar', 'Sonargaon', 'Rupganj', 'Araihazar', 'Bandar'] },
   { id: 'tangail', name: 'Tangail', bangla: 'টাঙ্গাইল', upazilas: ['Tangail Sadar', 'Mirzapur', 'Kalihati', 'Madhupur'] },
   { id: 'sylhet', name: 'Sylhet', bangla: 'সিলেট', upazilas: ['Sylhet Sadar', 'Beanibazar', 'Golapganj', 'Zakiganj', 'Biswanath'] },
-  { id: 'rajshahi', name: 'Rajshahi', bangla: 'রাজশাহী', upazilas: ['Boalia', 'Motihar', 'Rajpara', 'Paba', 'Godagari'] },
-  { id: 'khulna', name: 'Khulna', bangla: 'খুলনা', upazilas: ['Khulna Sadar', 'Sonadanga', 'Khalishpur', 'Daulatpur', 'Rupsha'] },
-  { id: 'barishal', name: 'Barishal', bangla: 'বরিশাল', upazilas: ['Barishal Sadar', 'Babuganj', 'Bakerganj', 'Banaripara'] },
-  { id: 'rangpur', name: 'Rangpur', bangla: 'রংপুর', upazilas: ['Rangpur Sadar', 'Badarganj', 'Gangachara', 'Pirgachha'] },
-  { id: 'dinajpur', name: 'Dinajpur', bangla: 'দিনাজপুর', upazilas: ['Dinajpur Sadar', 'Birganj', 'Parbatipur'] },
-  { id: 'kurigram', name: 'Kurigram', bangla: 'কুড়িগ্রাম', upazilas: ['Kurigram Sadar', 'Ulipur', 'Nageshwari'] },
-  { id: 'jamalpur', name: 'Jamalpur', bangla: 'জামালপুর', upazilas: ['Jamalpur Sadar', 'Sarishabari', 'Melandaha'] },
-  { id: 'pabna', name: 'Pabna', bangla: 'পাবনা', upazilas: ['Pabna Sadar', 'Ishwardi', 'Santhia'] },
-  { id: 'jashore', name: 'Jashore', bangla: 'যশোর', upazilas: ['Jashore Sadar', 'Jhikargachha', 'Keshabpur'] }
+  { id: 'bogura', name: 'Bogura', bangla: 'বগুড়া', upazilas: ['Shajahanpur', 'Shibganj', 'Bogra Sadar', 'Sherpur', 'Gabtali', 'Kahaloo', 'Dhunat', 'Nandigram', 'Sariakandi', 'Sonatola', 'Adamdighi', 'Dupchanchia'] },
+  { id: 'rajshahi', name: 'Rajshahi', bangla: 'রাজশাহী', upazilas: ['Boalia', 'Motihar', 'Rajpara', 'Paba', 'Godagari', 'Bagmara', 'Charghat', 'Durgapur', 'Puthia', 'Tanore'] },
+  { id: 'sirajganj', name: 'Sirajganj', bangla: 'সিরাজগঞ্জ', upazilas: ['Sirajganj Sadar', 'Belkuchi', 'Chauhali', 'Kamarkhanda', 'Kazipur', 'Raiganj', 'Shahjadpur', 'Tarash', 'Ullapara'] },
+  { id: 'naogaon', name: 'Naogaon', bangla: 'নওগাঁ', upazilas: ['Naogaon Sadar', 'Badalgachhi', 'Dhamoirhat', 'Manda', 'Mohadevpur', 'Niamatpur', 'Patnitala', 'Porsha', 'Raninagar', 'Sapahar'] },
+  { id: 'natore', name: 'Natore', bangla: 'নাটোর', upazilas: ['Natore Sadar', 'Bagatipara', 'Baraigram', 'Gurudaspur', 'Lalpur', 'Singra'] },
+  { id: 'joypurhat', name: 'Joypurhat', bangla: 'জয়পুরহাট', upazilas: ['Joypurhat Sadar', 'Akkelpur', 'Kalai', 'Khetlal', 'Panchbibi'] },
+  { id: 'chapainawabganj', name: 'Chapainawabganj', bangla: 'চাঁপাইনবাবগঞ্জ', upazilas: ['Chapainawabganj Sadar', 'Gomastapur', 'Nachole', 'Bholahat', 'Shibganj'] },
+  { id: 'pabna', name: 'Pabna', bangla: 'পাবনা', upazilas: ['Pabna Sadar', 'Ishwardi', 'Santhia', 'Atgharia', 'Bera', 'Bhangura', 'Chatmohar', 'Faridpur', 'Sujanagar'] },
+  { id: 'khulna', name: 'Khulna', bangla: 'খুলনা', upazilas: ['Khulna Sadar', 'Sonadanga', 'Khalishpur', 'Daulatpur', 'Rupsha', 'Dighalia', 'Batiaghata', 'Dumuria', 'Paikgachha', 'Koyra'] },
+  { id: 'jashore', name: 'Jashore', bangla: 'যশোর', upazilas: ['Jashore Sadar', 'Jhikargachha', 'Keshabpur', 'Abhaynagar', 'Bagherpara', 'Chaugachha', 'Manirampur', 'Sharsha'] },
+  { id: 'kushtia', name: 'Kushtia', bangla: 'কুষ্টিয়া', upazilas: ['Kushtia Sadar', 'Kumarkhali', 'Daulatpur', 'Mirpur', 'Bheramara', 'Khoksa'] },
+  { id: 'barishal', name: 'Barishal', bangla: 'বরিশাল', upazilas: ['Barishal Sadar', 'Babuganj', 'Bakerganj', 'Banaripara', 'Gournadi', 'Hizla', 'Mehendiganj', 'Muladi', 'Wazirpur'] },
+  { id: 'patuakhali', name: 'Patuakhali', bangla: 'পটুয়াখালী', upazilas: ['Patuakhali Sadar', 'Bauphal', 'Dashmina', 'Galachipa', 'Kalapara', 'Mirzaganj', 'Dumki'] },
+  { id: 'rangpur', name: 'Rangpur', bangla: 'রংপুর', upazilas: ['Rangpur Sadar', 'Badarganj', 'Gangachara', 'Pirgachha', 'Kaunia', 'Mithapukur', 'Pirganj', 'Taraganj'] },
+  { id: 'dinajpur', name: 'Dinajpur', bangla: 'দিনাজপুর', upazilas: ['Dinajpur Sadar', 'Birganj', 'Parbatipur', 'Bochaganj', 'Chirirbandar', 'Phulbari', 'Ghoraghat', 'Hakimpur', 'Kaharole', 'Khansama', 'Nawabganj', 'Birampur', 'Biral'] },
+  { id: 'kurigram', name: 'Kurigram', bangla: 'কুড়িগ্রাম', upazilas: ['Kurigram Sadar', 'Ulipur', 'Nageshwari', 'Bhurungamari', 'Chilmari', 'Phulbari', 'Rajarhat', 'Rajibpur', 'Rowmari'] },
+  { id: 'gaibandha', name: 'Gaibandha', bangla: 'গাইবান্ধা', upazilas: ['Gaibandha Sadar', 'Gobindaganj', 'Palashbari', 'Sadullapur', 'Saghata', 'Sundarganj', 'Phulchhari'] },
+  { id: 'sylhet', name: 'Sylhet', bangla: 'সিলেট', upazilas: ['Sylhet Sadar', 'Beanibazar', 'Golapganj', 'Zakiganj', 'Biswanath', 'Companiganj', 'Fenchuganj', 'Balaganj', 'Gowainghat', 'Jaintiapur', 'Kanaighat', 'South Surma'] },
+  { id: 'moulvibazar', name: 'Moulvibazar', bangla: 'মৌলভীবাজার', upazilas: ['Moulvibazar Sadar', 'Barlekha', 'Juri', 'Kamalganj', 'Kulaura', 'Rajnagar', 'Sreemangal'] },
+  { id: 'habiganj', name: 'Habiganj', bangla: 'হবিগঞ্জ', upazilas: ['Habiganj Sadar', 'Ajmiriganj', 'Bahubal', 'Baniachang', 'Chunarughat', 'Lakhai', 'Madhabpur', 'Nabiganj'] },
+  { id: 'sunamganj', name: 'Sunamganj', bangla: 'সুনামগঞ্জ', upazilas: ['Sunamganj Sadar', 'Chhatak', 'Jagannathpur', 'Derai', 'Dharampasha', 'Dowarabazar', 'Tahirpur'] },
+  { id: 'jamalpur', name: 'Jamalpur', bangla: 'জামালপুর', upazilas: ['Jamalpur Sadar', 'Sarishabari', 'Melandaha', 'Islampur', 'Dewanganj', 'Bakshiganj', 'Madarganj'] }
 ];
 
 export const INITIAL_DONORS: Donor[] = importedTursoDonors as Donor[];
@@ -435,12 +448,12 @@ export const SAMPLE_TURSO_LEGACY_DUMP: TursoRawDonorRecord[] = [
   },
   {
     old_id: 1004,
-    full_name: 'Md. Rahim Ullah (Duplicate in Old DB)',
-    raw_phone: '+8801812345678', // Same as Rahim Ullah in existing donors!
+    full_name: 'মো. রহিম উল্লাহ (কক্সবাজার)',
+    raw_phone: '+8801812345678',
     raw_blood: 'O+',
     raw_location: 'Ramu Chowmuhani',
     last_donated_str: '2026-05-15',
-    legacy_notes: 'Duplicate detection test record'
+    legacy_notes: 'পূর্বে নিবন্ধিত সদৃশ এন্ট্রি'
   },
   {
     old_id: 1005,
@@ -462,11 +475,11 @@ export const SAMPLE_TURSO_LEGACY_DUMP: TursoRawDonorRecord[] = [
   },
   {
     old_id: 1007,
-    full_name: 'Invalid Test User',
-    raw_phone: '12345', // Invalid phone format
-    raw_blood: 'Unknown',
-    raw_location: 'Unknown',
+    full_name: 'অসম্পূর্ণ এন্ট্রি (যাচাইহীন)',
+    raw_phone: '12345',
+    raw_blood: 'অনির্ধারিত',
+    raw_location: 'অনুপলব্ধ',
     last_donated_str: 'N/A',
-    legacy_notes: 'Malformed entry to test filter & error reporting'
+    legacy_notes: 'পুরোনো ডাটাবেজ থেকে ত্রুটিপূর্ণ রেকর্ড'
   }
 ];

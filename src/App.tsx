@@ -13,6 +13,9 @@ import {
   AuthModal 
 } from './components/AuthModal';
 import { 
+  MobileBottomNav 
+} from './components/MobileBottomNav';
+import { 
   HomeView 
 } from './views/HomeView';
 import { 
@@ -98,6 +101,7 @@ function ScrollToTop() {
 export default function App() {
   const navigate = useNavigate();
   const [currentUser, setUser] = useState<User | null>(getCurrentUser());
+  const activeUser = currentUser || getCurrentUser();
   const [donors, setDonors] = useState<Donor[]>(getStoredDonors());
   const [requests, setRequests] = useState<BloodRequest[]>(getStoredRequests());
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(getStoredAuditLogs());
@@ -271,7 +275,7 @@ export default function App() {
 
       {/* Top Bar Header */}
       <Header
-        currentUser={currentUser}
+        currentUser={activeUser}
         onRoleChange={handleRoleChange}
         notifications={notifications}
         unreadCount={unreadNotifs}
@@ -284,7 +288,7 @@ export default function App() {
       />
 
       {/* Main Content Area with React Router */}
-      <main className="flex-1">
+      <main className="flex-1 pb-20 md:pb-0">
         <Routes>
           <Route
             path="/"
@@ -382,8 +386,9 @@ export default function App() {
           {/* Organizations */}
           <Route path="/organizations" element={<OrganizationsView />} />
 
-          {/* Volunteer Portal */}
+          {/* Volunteer Portal (supports both singular and plural paths) */}
           <Route path="/volunteer" element={<VolunteerPortalView />} />
+          <Route path="/volunteers" element={<VolunteerPortalView />} />
 
           {/* Hospitals and Blood Banks */}
           <Route path="/hospitals" element={<HospitalsView />} />
@@ -399,6 +404,11 @@ export default function App() {
               <BecomeDonorView
                 onRegisterDonor={handleRegisterNewDonor}
                 onNavigateDonors={() => navigate('/donors')}
+                onAutoLogin={(donorUser) => {
+                  setCurrentUser(donorUser);
+                  setUser(donorUser);
+                  showToast(`${donorUser.name} হিসেবে রেজিস্ট্রেশন ও লগইন সফল হয়েছে!`);
+                }}
               />
             }
           />
@@ -407,9 +417,9 @@ export default function App() {
           <Route
             path="/dashboard"
             element={
-              currentUser ? (
+              activeUser ? (
                 <DashboardView
-                  currentUser={currentUser}
+                  currentUser={activeUser}
                   donors={donors}
                   requests={requests}
                   auditLogs={auditLogs}
@@ -435,11 +445,11 @@ export default function App() {
             path="/login" 
             element={
               <LoginView 
-                currentUser={currentUser}
+                currentUser={activeUser}
                 onLogout={handleLogout}
                 onLoginSuccess={(userObj) => {
-                  setUser(userObj);
                   setCurrentUser(userObj);
+                  setUser(userObj);
                   showToast(`${userObj.name} হিসেবে লগইন সফল হয়েছে!`);
                 }}
               />
@@ -449,11 +459,11 @@ export default function App() {
             path="/login/:roleParam" 
             element={
               <LoginView 
-                currentUser={currentUser}
+                currentUser={activeUser}
                 onLogout={handleLogout}
                 onLoginSuccess={(userObj) => {
-                  setUser(userObj);
                   setCurrentUser(userObj);
+                  setUser(userObj);
                   showToast(`${userObj.name} হিসেবে লগইন সফল হয়েছে!`);
                 }}
               />
@@ -464,9 +474,9 @@ export default function App() {
           <Route 
             path="/profile" 
             element={
-              currentUser ? (
+              activeUser ? (
                 <UserProfileView 
-                  currentUser={currentUser}
+                  currentUser={activeUser}
                   requests={requests}
                   donors={donors}
                   onLogout={handleLogout}
@@ -485,9 +495,9 @@ export default function App() {
           <Route 
             path="/admin/profile" 
             element={
-              currentUser && currentUser.role === 'admin' ? (
+              activeUser && activeUser.role === 'admin' ? (
                 <AdminProfileView 
-                  currentUser={currentUser}
+                  currentUser={activeUser}
                   donors={donors}
                   requests={requests}
                   auditLogs={auditLogs}
@@ -520,7 +530,35 @@ export default function App() {
         onClose={() => setAuthModalOpen(false)}
         initialMode={authModalMode}
         onLoginSuccess={(phone) => {
-          showToast(`লগইন সফল হয়েছে: ${phone}`);
+          const normalized = phone.replace(/[^0-9]/g, '');
+          const allDonors = getStoredDonors();
+          const matchedDonor = allDonors.find(d => {
+            const dPhone = (d.phone || '').replace(/[^0-9]/g, '');
+            return dPhone === normalized || (dPhone.length === 11 && normalized.length === 11 && dPhone.endsWith(normalized.slice(-10)));
+          });
+
+          const loggedUser: User = {
+            id: matchedDonor ? matchedDonor.userId || `user-${matchedDonor.id}` : `user-${Date.now()}`,
+            uuid: `uuid-user-${normalized}`,
+            name: matchedDonor ? matchedDonor.name : 'রক্তদাতা ও সদস্য',
+            username: matchedDonor ? matchedDonor.username : `user_${normalized.slice(-4)}`,
+            email: matchedDonor?.email || `${normalized}@totthohub.com`,
+            phone: normalized,
+            role: matchedDonor ? 'donor' : 'user',
+            status: 'active',
+            emailVerified: true,
+            phoneVerified: true,
+            districtId: matchedDonor?.districtId || 'cox-bazar',
+            upazilaId: matchedDonor?.upazilaId || 'cox-bazar-sadar',
+            districtName: matchedDonor?.districtName || "Cox's Bazar",
+            upazilaName: matchedDonor?.upazilaName || "কক্সবাজার সদর",
+            createdAt: matchedDonor?.createdAt || new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+
+          setCurrentUser(loggedUser);
+          setUser(loggedUser);
+          showToast(`${loggedUser.name} হিসেবে লগইন সফল হয়েছে!`);
         }}
         onNavigateToBecomeDonor={() => {
           navigate('/become-donor');
@@ -529,6 +567,9 @@ export default function App() {
 
       {/* Footer */}
       <Footer />
+
+      {/* Mobile Sticky Bottom Navigation */}
+      <MobileBottomNav currentUser={activeUser} />
 
     </div>
   );

@@ -116,7 +116,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center gap-2 sm:gap-2.5">
             
             {/* If NOT logged in: Show Login button */}
-            {!currentUser ? (
+            {!currentUser && (
               <Link
                 to="/login"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-slate-200"
@@ -124,20 +124,32 @@ export const Header: React.FC<HeaderProps> = ({
                 <LogIn className="w-3.5 h-3.5 text-rose-600" />
                 <span>লগইন</span>
               </Link>
-            ) : (
-              /* If logged in: Show User Profile link */
-              <Link
-                to="/profile"
-                className={`hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg border transition-colors ${
-                  location.pathname === '/profile'
-                    ? 'bg-rose-50 text-rose-700 border-rose-200'
-                    : 'bg-slate-50 text-slate-700 hover:bg-rose-50 hover:text-rose-700 border-slate-200'
-                }`}
-                title="আমার প্রোফাইল"
-              >
-                <UserCheck className="w-3.5 h-3.5 text-rose-600" />
-                <span className="max-w-[120px] truncate">{currentUser.name || 'আমার প্রোফাইল'}</span>
-              </Link>
+            )}
+
+            {/* If logged in: Show User Profile link */}
+            {currentUser && (
+              <>
+                <Link
+                  to="/profile"
+                  className="md:hidden flex items-center justify-center w-8 h-8 rounded-full bg-rose-100 text-rose-700 font-bold text-xs border border-rose-200"
+                  title={currentUser.name}
+                >
+                  {currentUser.name.charAt(0)}
+                </Link>
+
+                <Link
+                  to="/profile"
+                  className={`hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg border transition-colors ${
+                    location.pathname === '/profile'
+                      ? 'bg-rose-50 text-rose-700 border-rose-200'
+                      : 'bg-slate-50 text-slate-700 hover:bg-rose-50 hover:text-rose-700 border-slate-200'
+                  }`}
+                  title="আমার প্রোফাইল"
+                >
+                  <UserCheck className="w-3.5 h-3.5 text-rose-600" />
+                  <span className="max-w-[120px] truncate">{currentUser.name || 'আমার প্রোফাইল'}</span>
+                </Link>
+              </>
             )}
 
             {/* Logout button (Only when logged in) */}

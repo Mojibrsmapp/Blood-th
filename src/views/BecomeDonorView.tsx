@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   Heart, 
   MapPin, 
@@ -7,21 +8,25 @@ import {
   Calendar, 
   Phone, 
   Droplet,
-  Send
+  Send,
+  LayoutDashboard
 } from 'lucide-react';
-import { BloodGroup, Donor } from '../types';
+import { BloodGroup, Donor, User } from '../types';
 import { DISTRICTS } from '../data/seedData';
+import { cleanBangladeshiPhone } from './LoginView';
 
 interface BecomeDonorViewProps {
   onRegisterDonor: (newDonor: Donor) => void;
   onNavigateDonors: () => void;
+  onAutoLogin?: (user: User) => void;
 }
 
 const BLOOD_GROUPS: BloodGroup[] = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 
 export const BecomeDonorView: React.FC<BecomeDonorViewProps> = ({
   onRegisterDonor,
-  onNavigateDonors
+  onNavigateDonors,
+  onAutoLogin
 }) => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -44,8 +49,7 @@ export const BecomeDonorView: React.FC<BecomeDonorViewProps> = ({
     if (!name || !phone) return;
 
     // Normalizing phone
-    let cleanedPhone = phone.replace(/[\s\-\(\)]/g, '');
-    if (cleanedPhone.startsWith('+880')) cleanedPhone = '0' + cleanedPhone.substring(4);
+    const cleanedPhone = cleanBangladeshiPhone(phone);
 
     const newDonor: Donor = {
       id: `donor-${Date.now()}`,
@@ -73,6 +77,29 @@ export const BecomeDonorView: React.FC<BecomeDonorViewProps> = ({
     };
 
     onRegisterDonor(newDonor);
+
+    if (onAutoLogin) {
+      const donorUser: User = {
+        id: newDonor.userId,
+        uuid: `uuid-donor-${cleanedPhone}`,
+        name: newDonor.name,
+        username: newDonor.username,
+        email: newDonor.email,
+        phone: newDonor.phone,
+        role: 'donor',
+        status: 'active',
+        emailVerified: true,
+        phoneVerified: true,
+        districtId: newDonor.districtId,
+        upazilaId: newDonor.upazilaId,
+        districtName: newDonor.districtName,
+        upazilaName: newDonor.upazilaName,
+        createdAt: newDonor.createdAt,
+        updatedAt: newDonor.updatedAt
+      };
+      onAutoLogin(donorUser);
+    }
+
     setSubmitted(true);
   };
 
@@ -102,10 +129,17 @@ export const BecomeDonorView: React.FC<BecomeDonorViewProps> = ({
             <p className="text-xs sm:text-sm text-slate-600 max-w-sm mx-auto leading-relaxed">
               {upazilaName}, {currentDistrict.name}-এ <strong>{bloodGroup}</strong> গ্রুপের একজন স্বেচ্ছাসেবী রক্তদাতা হিসেবে আপনার প্রোফাইল সফলভাবে তৈরি হয়েছে।
             </p>
-            <div className="pt-4 flex justify-center gap-3">
+            <div className="pt-4 flex flex-wrap justify-center gap-3">
+              <Link
+                to="/dashboard"
+                className="px-6 py-2.5 bg-rose-600 text-white rounded-xl text-xs font-bold hover:bg-rose-700 transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                <span>আমার ড্যাশবোর্ডে প্রবেশ করুন</span>
+              </Link>
               <button
                 onClick={onNavigateDonors}
-                className="px-6 py-2.5 bg-rose-600 text-white rounded-xl text-xs font-bold hover:bg-rose-700 transition-colors cursor-pointer"
+                className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-colors cursor-pointer"
               >
                 রক্তদাতা তালিকা দেখুন
               </button>
