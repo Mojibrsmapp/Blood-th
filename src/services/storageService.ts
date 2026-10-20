@@ -50,10 +50,121 @@ export const DEFAULT_USER: User = {
   updatedAt: '2026-10-07T05:00:00Z'
 };
 
-export const FOUNDER_USER: User = DEFAULT_USER;
+export const FOUNDER_ADMIN_USER: User = {
+  id: 'user-01601519007',
+  uuid: 'uuid-admin-mojib',
+  name: 'Mojibur Rahman',
+  username: 'mojibrsm',
+  phone: '01601519007',
+  email: 'mojibrsm@gmail.com',
+  role: 'admin',
+  status: 'active',
+  emailVerified: true,
+  phoneVerified: true,
+  avatarUrl: 'https://ik.imagekit.io/uekohag7w/roktodao/avatars/Image_-_Mojibur_Rahman_3RYwZ7Kdx.png?updatedAt=1754838793398',
+  password: 'adminmojib',
+  districtId: 'cox-bazar',
+  upazilaId: 'ramu',
+  districtName: "Cox's Bazar",
+  upazilaName: 'রামু',
+  createdAt: '2026-03-29T23:57:13.121Z',
+  updatedAt: '2026-10-20T12:00:00Z'
+};
+
+export const FOUNDER_USER: User = FOUNDER_ADMIN_USER;
 
 const CUSTOM_DONORS_KEY = 'totthohub_blood_custom_donors';
+const CUSTOM_USERS_KEY = 'totthohub_blood_custom_users';
 const STATUS_OVERRIDES_KEY = 'totthohub_blood_donor_status_overrides';
+
+export const SEED_SPECIAL_DONORS: Donor[] = [
+  {
+    id: 'donor-01601519007',
+    userId: 'user-01601519007',
+    name: 'Mojibur Rahman',
+    username: 'mojibrsm',
+    phone: '01601519007',
+    email: 'mojibrsm@gmail.com',
+    bloodGroup: 'AB+',
+    gender: 'male',
+    districtId: 'cox-bazar',
+    districtName: "Cox's Bazar",
+    upazilaId: 'ramu',
+    upazilaName: 'রামু',
+    area: 'রামু, কক্সবাজার',
+    availability: 'available',
+    lastDonationDate: '২০২৬-০৫-০১',
+    donationCount: 4,
+    verificationStatus: 'profile_verified',
+    bio: 'Mojibur Rahman - Oftern IT (অ্যাডমিন ও নিয়মিত রক্তদাতা)',
+    imageUrl: 'https://ik.imagekit.io/uekohag7w/roktodao/avatars/Image_-_Mojibur_Rahman_3RYwZ7Kdx.png?updatedAt=1754838793398',
+    isAvailableForEmergency: true,
+    totalHelpedCount: 4,
+    createdAt: '2026-03-29T23:57:13.121Z',
+    updatedAt: '2026-10-20T12:00:00Z'
+  },
+  {
+    id: 'donor-01866792169',
+    userId: 'user-01866792169',
+    name: 'মোঃ ইমরান',
+    username: 'imran_2169',
+    phone: '01866792169',
+    email: 'mohammedimran712159@gmail.com',
+    bloodGroup: 'B+',
+    gender: 'male',
+    districtId: 'cox-bazar',
+    districtName: "Cox's Bazar",
+    upazilaId: 'ramu',
+    upazilaName: 'রামু',
+    area: 'খুনিয়াপালং ইউনিয়ন, রামু, কক্সবাজার',
+    availability: 'available',
+    lastDonationDate: '২০২৬-০২-২৮',
+    donationCount: 0,
+    verificationStatus: 'phone_verified',
+    bio: 'মোঃ ইমরান - স্বেচ্ছাসেবী রক্তদাতা (খুনিয়াপালং ইউনিয়ন, রামু)',
+    isAvailableForEmergency: true,
+    totalHelpedCount: 0,
+    createdAt: '2026-02-28T17:22:03.606Z',
+    updatedAt: '2026-10-20T12:00:00Z'
+  }
+];
+
+export function getStoredCustomUsers(): User[] {
+  try {
+    const raw = localStorage.getItem(CUSTOM_USERS_KEY);
+    const users: User[] = raw ? JSON.parse(raw) : [];
+    if (!users.some(u => u.phone === FOUNDER_ADMIN_USER.phone || u.email === FOUNDER_ADMIN_USER.email)) {
+      users.unshift(FOUNDER_ADMIN_USER);
+    }
+    return users;
+  } catch {
+    return [FOUNDER_ADMIN_USER];
+  }
+}
+
+export function saveCustomUsers(users: User[]) {
+  try {
+    localStorage.setItem(CUSTOM_USERS_KEY, JSON.stringify(users.slice(0, 500)));
+  } catch (e) {
+    console.error('Failed to save custom users', e);
+  }
+}
+
+export function addCustomUsers(newUsers: User[]) {
+  const existing = getStoredCustomUsers();
+  const phoneMap = new Set(existing.map(u => (u.phone || '').replace(/\D/g, '')));
+  const toAdd: User[] = [];
+  for (const u of newUsers) {
+    const cleanP = (u.phone || '').replace(/\D/g, '');
+    if (!phoneMap.has(cleanP)) {
+      phoneMap.add(cleanP);
+      toAdd.push(u);
+    }
+  }
+  const merged = [...toAdd, ...existing];
+  saveCustomUsers(merged);
+  return merged;
+}
 
 export function getStoredDonors(): Donor[] {
   try {
@@ -63,11 +174,16 @@ export function getStoredDonors(): Donor[] {
     const rawOverrides = localStorage.getItem(STATUS_OVERRIDES_KEY);
     const overrides: Record<string, Partial<Donor>> = rawOverrides ? JSON.parse(rawOverrides) : {};
 
-    const customIds = new Set(customDonors.map(d => d.id));
     const customPhones = new Set(customDonors.map(d => (d.phone || '').replace(/\D/g, '')));
 
+    // Ensure seed special donors exist
+    const specialToAdd = SEED_SPECIAL_DONORS.filter(s => !customPhones.has((s.phone || '').replace(/\D/g, '')));
+
+    const allCustomAndSpecial = [...customDonors, ...specialToAdd];
+    const allKnownPhones = new Set(allCustomAndSpecial.map(d => (d.phone || '').replace(/\D/g, '')));
+
     const mergedBase = INITIAL_DONORS.filter(d => 
-      !customIds.has(d.id) && !customPhones.has((d.phone || '').replace(/\D/g, ''))
+      !allKnownPhones.has((d.phone || '').replace(/\D/g, ''))
     ).map(d => {
       if (overrides[d.id]) {
         return { ...d, ...overrides[d.id] };
@@ -75,23 +191,20 @@ export function getStoredDonors(): Donor[] {
       return d;
     });
 
-    return [...customDonors, ...mergedBase];
+    return [...allCustomAndSpecial, ...mergedBase];
   } catch {
-    return INITIAL_DONORS;
+    return [...SEED_SPECIAL_DONORS, ...INITIAL_DONORS];
   }
 }
 
 export function saveDonors(donors: Donor[]) {
   try {
-    // Save newly created custom donors
+    // Save newly created or imported custom donors
     const customDonors = donors.filter(d => 
-      d.id.startsWith('donor-custom-') || 
-      d.id.startsWith('donor-17') || 
-      d.id.startsWith('donor-20') ||
       !INITIAL_DONORS.some(base => base.id === d.id)
     );
     if (customDonors.length > 0) {
-      localStorage.setItem(CUSTOM_DONORS_KEY, JSON.stringify(customDonors.slice(0, 1000)));
+      localStorage.setItem(CUSTOM_DONORS_KEY, JSON.stringify(customDonors.slice(0, 3000)));
     }
 
     // Save status overrides (availability or verification changes)
@@ -113,6 +226,32 @@ export function saveDonors(donors: Donor[]) {
   } catch (e) {
     console.error('Failed to save donors to localStorage', e);
   }
+}
+
+export function addImportedDonors(newDonors: Donor[], newUsers?: User[]): { updatedDonors: Donor[]; addedCount: number } {
+  const currentDonors = getStoredDonors();
+  const phoneMap = new Set(currentDonors.map(d => (d.phone || '').replace(/\D/g, '')));
+  
+  const toAdd: Donor[] = [];
+  for (const d of newDonors) {
+    const cleanP = (d.phone || '').replace(/\D/g, '');
+    if (!phoneMap.has(cleanP)) {
+      phoneMap.add(cleanP);
+      toAdd.push(d);
+    }
+  }
+
+  const merged = [...toAdd, ...currentDonors];
+  saveDonors(merged);
+
+  if (newUsers && newUsers.length > 0) {
+    addCustomUsers(newUsers);
+  }
+
+  return {
+    updatedDonors: merged,
+    addedCount: toAdd.length
+  };
 }
 
 export function getStoredRequests(): BloodRequest[] {

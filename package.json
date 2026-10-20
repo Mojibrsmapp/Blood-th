@@ -10,7 +10,9 @@
     "start": "node server.js",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "import:csv": "node scripts/import_bbms_csv.js"
+    "import:csv": "node scripts/import_bbms_csv.js",
+    "import:bbms": "node scripts/import_bbms_csv.js",
+    "import:json": "node scripts/import_donors_json.js"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

@@ -263,12 +263,12 @@ export default function App() {
   const urgentCount = requests.filter(r => r.urgency === 'critical' && r.status !== 'fulfilled').length;
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 font-sans selection:bg-rose-500 selection:text-white">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden flex flex-col bg-slate-50 font-sans selection:bg-rose-500 selection:text-white">
       <ScrollToTop />
       
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-2xl shadow-xl border border-slate-800 animate-in fade-in slide-in-from-bottom-2 duration-200">
+        <div className="fixed bottom-20 md:bottom-6 right-4 left-4 sm:left-auto sm:right-6 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-2xl shadow-xl border border-slate-800 animate-in fade-in slide-in-from-bottom-2 duration-200 text-center sm:text-left">
           {toastMessage}
         </div>
       )}

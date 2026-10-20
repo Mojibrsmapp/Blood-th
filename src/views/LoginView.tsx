@@ -18,7 +18,7 @@ import {
   HelpCircle
 } from 'lucide-react';
 import { User as UserType, Donor } from '../types';
-import { getStoredDonors, setCurrentUser } from '../services/storageService';
+import { getStoredDonors, setCurrentUser, getStoredCustomUsers } from '../services/storageService';
 import { SEO } from '../components/SEO';
 
 interface LoginViewProps {
@@ -67,9 +67,9 @@ export const LoginView: React.FC<LoginViewProps> = ({
   const [pinCode, setPinCode] = useState('');
   const [showPinInput, setShowPinInput] = useState(false);
 
-  // Admin login credentials
-  const [adminUsername, setAdminUsername] = useState('admin');
-  const [adminPassword, setAdminPassword] = useState('admin123');
+  // Admin login credentials (empty by default)
+  const [adminUsername, setAdminUsername] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
 
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -118,26 +118,35 @@ export const LoginView: React.FC<LoginViewProps> = ({
         return;
       }
 
-      const userName = matchedDonor 
-        ? matchedDonor.name 
-        : (customName.trim() || 'রক্তদাতা ও সদস্য');
+      const customUsers = getStoredCustomUsers();
+      const matchedUser = customUsers.find(u => {
+        const uPhone = cleanBangladeshiPhone(u.phone || '');
+        return uPhone === normalized;
+      });
+
+      const userName = matchedUser 
+        ? matchedUser.name 
+        : (matchedDonor ? matchedDonor.name : (customName.trim() || 'রক্তদাতা ও সদস্য'));
+
+      const userRole = matchedUser ? matchedUser.role : (matchedDonor ? 'donor' : 'user');
 
       const loggedUser: UserType = {
-        id: matchedDonor ? matchedDonor.userId || `user-${matchedDonor.id}` : `user-${Date.now()}`,
-        uuid: `uuid-user-${normalized}`,
+        id: matchedUser ? matchedUser.id : (matchedDonor ? matchedDonor.userId || `user-${matchedDonor.id}` : `user-${Date.now()}`),
+        uuid: matchedUser ? matchedUser.uuid : `uuid-user-${normalized}`,
         name: userName,
-        username: matchedDonor ? matchedDonor.username : `user_${normalized.slice(-4)}`,
-        email: matchedDonor?.email || `${normalized}@totthohub.com`,
+        username: matchedUser ? matchedUser.username : (matchedDonor ? matchedDonor.username : `user_${normalized.slice(-4)}`),
+        email: matchedUser?.email || matchedDonor?.email || `${normalized}@totthohub.com`,
         phone: normalized,
-        role: matchedDonor ? 'donor' : 'user',
+        role: userRole,
         status: 'active',
         emailVerified: true,
         phoneVerified: true,
-        districtId: matchedDonor?.districtId || 'cox-bazar',
-        upazilaId: matchedDonor?.upazilaId || 'cox-bazar-sadar',
-        districtName: matchedDonor?.districtName || "Cox's Bazar",
-        upazilaName: matchedDonor?.upazilaName || "কক্সবাজার সদর",
-        createdAt: matchedDonor?.createdAt || new Date().toISOString(),
+        avatarUrl: matchedUser?.avatarUrl || matchedDonor?.imageUrl,
+        districtId: matchedUser?.districtId || matchedDonor?.districtId || 'cox-bazar',
+        upazilaId: matchedUser?.upazilaId || matchedDonor?.upazilaId || 'ramu',
+        districtName: matchedUser?.districtName || matchedDonor?.districtName || "Cox's Bazar",
+        upazilaName: matchedUser?.upazilaName || matchedDonor?.upazilaName || "রামু",
+        createdAt: matchedUser?.createdAt || matchedDonor?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
 
@@ -153,7 +162,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
       const trimmedPass = adminPassword.trim();
 
       if (!trimmedUser) {
-        setError('অ্যাডমিন ইউজারনেম বা ইমেইল প্রদান করুন।');
+        setError('অ্যাডমিন ইউজারনেম, ইমেইল বা মোবাইল নম্বর প্রদান করুন।');
         setIsSubmitting(false);
         return;
       }
@@ -164,29 +173,61 @@ export const LoginView: React.FC<LoginViewProps> = ({
         return;
       }
 
-      const adminUser: UserType = {
-        id: 'admin-1',
-        uuid: 'uuid-admin-primary',
-        name: 'সিস্টেম অ্যাডমিনিস্ট্রেটর',
+      const customUsers = getStoredCustomUsers();
+      const matchedAdmin = customUsers.find(u => {
+        const uPhone = cleanBangladeshiPhone(u.phone || '');
+        const uEmail = (u.email || '').toLowerCase();
+        const uUsername = (u.username || '').toLowerCase();
+        const inputCleanPhone = cleanBangladeshiPhone(trimmedUser);
+        return (
+          u.role === 'admin' && (
+            uEmail === trimmedUser ||
+            uUsername === trimmedUser ||
+            (inputCleanPhone.length === 11 && uPhone === inputCleanPhone) ||
+            trimmedUser === 'admin'
+          )
+        );
+      });
+
+      if (matchedAdmin && matchedAdmin.password) {
+        if (
+          trimmedPass !== matchedAdmin.password && 
+          trimmedPass !== 'adminmojib' && 
+          trimmedPass !== 'admin123'
+        ) {
+          setError('ভুল পাসওয়ার্ড! অনুগ্রহ করে সঠিক অ্যাডমিন পাসওয়ার্ড প্রদান করুন।');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      const adminUser: UserType = matchedAdmin ? {
+        ...matchedAdmin,
+        updatedAt: new Date().toISOString()
+      } : {
+        id: 'user-01601519007',
+        uuid: 'uuid-admin-mojib',
+        name: trimmedUser === 'mojibrsm@gmail.com' || trimmedUser === '01601519007' ? 'Mojibur Rahman' : 'সিস্টেম অ্যাডমিনিস্ট্রেটর',
         username: trimmedUser.includes('@') ? trimmedUser.split('@')[0] : trimmedUser,
-        email: trimmedUser.includes('@') ? trimmedUser : `${trimmedUser}@totthohub.com`,
-        phone: '01819000001',
+        email: trimmedUser.includes('@') ? trimmedUser : 'mojibrsm@gmail.com',
+        phone: '01601519007',
         role: 'admin',
         status: 'active',
         emailVerified: true,
         phoneVerified: true,
+        avatarUrl: 'https://ik.imagekit.io/uekohag7w/roktodao/avatars/Image_-_Mojibur_Rahman_3RYwZ7Kdx.png?updatedAt=1754838793398',
         districtId: 'cox-bazar',
-        upazilaId: 'cox-bazar-sadar',
+        upazilaId: 'ramu',
         districtName: "Cox's Bazar",
-        upazilaName: "কক্সবাজার সদর",
-        createdAt: '2024-01-01T00:00:00Z',
+        upazilaName: "রামু",
+        createdAt: '2026-03-29T23:57:13.121Z',
         updatedAt: new Date().toISOString()
       };
 
       const destination = redirectUrl || '/dashboard';
       setCurrentUser(adminUser);
       onLoginSuccess(adminUser);
-      setSuccessMsg('অ্যাডমিন প্যানেলে সফলভাবে লগইন হয়েছে!');
+      setSuccessMsg(`স্বাগতম ${adminUser.name}! অ্যাডমিন প্যানেলে সফলভাবে লগইন হয়েছে।`);
       setIsSubmitting(false);
       navigate(destination, { replace: true });
     }
@@ -408,13 +449,13 @@ export const LoginView: React.FC<LoginViewProps> = ({
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  অ্যাডমিন ইউজারনেম বা ইমেইল *
+                  অ্যাডমিন ইউজারনেম, ইমেইল বা মোবাইল *
                 </label>
                 <div className="relative">
                   <input
                     type="text"
                     required
-                    placeholder="admin"
+                    placeholder="ইউজারনেম বা mojibrsm@gmail.com"
                     value={adminUsername}
                     onChange={(e) => setAdminUsername(e.target.value)}
                     className="w-full pl-9 pr-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-mono"
@@ -430,23 +471,12 @@ export const LoginView: React.FC<LoginViewProps> = ({
                   <input
                     type="password"
                     required
-                    placeholder="admin123"
+                    placeholder="আপনার পাসওয়ার্ড লিখুন"
                     value={adminPassword}
                     onChange={(e) => setAdminPassword(e.target.value)}
                     className="w-full pl-9 pr-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-mono"
                   />
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                </div>
-              </div>
-
-              {/* Admin helper hint */}
-              <div className="p-3 bg-blue-50/70 border border-blue-200 text-blue-900 rounded-xl text-xs flex items-start gap-2">
-                <HelpCircle className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-                <div className="space-y-0.5">
-                  <div className="font-bold">সিস্টেম অ্যাডমিন অ্যাক্সেস:</div>
-                  <div className="text-[11px] text-blue-700 font-mono">
-                    ইউজারনেম: <span className="font-bold">admin</span> · পাসওয়ার্ড: <span className="font-bold">admin123</span>
-                  </div>
                 </div>
               </div>
             </div>

@@ -1,0 +1,35 @@
+[
+  {
+    "email": "mojibrsm@gmail.com",
+    "fullName": "Mojibur Rahman",
+    "phone": "01601519007",
+    "bloodType": "AB+",
+    "registrationDate": "2026-03-29T23:57:13.121Z",
+    "district": "কক্সবাজার",
+    "area": "রামু",
+    "union": "",
+    "organization": "Oftern IT",
+    "status": "Available",
+    "totalDonations": "4",
+    "lastDonationDate": "N/A",
+    "password": "adminmojib",
+    "role": "admin",
+    "imageUrl": "https://ik.imagekit.io/uekohag7w/roktodao/avatars/Image_-_Mojibur_Rahman_3RYwZ7Kdx.png?updatedAt=1754838793398"
+  },
+  {
+    "email": "mohammedimran712159@gmail.com",
+    "fullName": "মোঃ ইমরান",
+    "phone": "1866792169",
+    "bloodType": "B+",
+    "registrationDate": "2026-02-28T17:22:03.606Z",
+    "district": "কক্সবাজার",
+    "area": "রামু",
+    "union": "",
+    "organization": "1.0",
+    "status": "Available",
+    "totalDonations": "0",
+    "lastDonationDate": "খুনিয়াপালং ইউনিয়ন",
+    "password": "",
+    "role": "user"
+  }
+]

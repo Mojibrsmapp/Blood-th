@@ -13,18 +13,28 @@ interface SEOProps {
 
 const DEFAULT_TITLE = 'TotthoHub Blood - রক্ত দিন, জীবন বাঁচান | তথ্যহাব ব্লাড';
 const DEFAULT_DESC = 'তথ্যহাব ব্লাড (TotthoHub Blood) - বাংলাদেশের বিশ্বস্ত রক্তদান ও রক্তদাতা ম্যাচিং প্ল্যাটফর্ম। জরুরি রক্তের প্রয়োজনে খুঁজুন নিকটস্থ রক্তদাতা।';
-const BASE_URL = 'https://blood.totthohub.com';
+const getActiveBaseUrl = () => {
+  if (typeof window !== 'undefined' && window.location.origin) {
+    const origin = window.location.origin;
+    if (origin.includes('roktodao.pro.bd') || origin.includes('totthohub.com')) {
+      return origin;
+    }
+  }
+  return 'https://blood.totthohub.com';
+};
 
 export const SEO: React.FC<SEOProps> = ({
   title,
   description,
   keywords,
   canonical,
-  ogImage = `${BASE_URL}/og-image.png`,
+  ogImage,
   ogType = 'website',
   jsonLd,
 }) => {
   const location = useLocation();
+  const currentBaseUrl = getActiveBaseUrl();
+  const finalOgImage = ogImage || `${currentBaseUrl}/og-image.png`;
 
   useEffect(() => {
     // 1. Update Document Title
@@ -50,7 +60,7 @@ export const SEO: React.FC<SEOProps> = ({
     }
 
     // 3. Canonical URL
-    const finalCanonical = canonical || `${BASE_URL}${location.pathname}`;
+    const finalCanonical = canonical || `${currentBaseUrl}${location.pathname}`;
     let linkCanonical = document.querySelector('link[rel="canonical"]');
     if (!linkCanonical) {
       linkCanonical = document.createElement('link');
@@ -64,12 +74,12 @@ export const SEO: React.FC<SEOProps> = ({
     setMetaTag('property', 'og:description', finalDesc);
     setMetaTag('property', 'og:url', finalCanonical);
     setMetaTag('property', 'og:type', ogType);
-    setMetaTag('property', 'og:image', ogImage);
+    setMetaTag('property', 'og:image', finalOgImage);
 
     // 5. Twitter Card Tags
     setMetaTag('name', 'twitter:title', finalTitle);
     setMetaTag('name', 'twitter:description', finalDesc);
-    setMetaTag('name', 'twitter:image', ogImage);
+    setMetaTag('name', 'twitter:image', finalOgImage);
 
     // 6. Dynamic JSON-LD Structured Data
     const scriptId = 'dynamic-seo-ldjson';

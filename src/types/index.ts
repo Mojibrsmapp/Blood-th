@@ -40,12 +40,35 @@ export interface User {
   emailVerified: boolean;
   phoneVerified: boolean;
   avatarUrl?: string;
+  password?: string;
   districtId: string;
   upazilaId?: string;
   districtName?: string;
   upazilaName?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface RawImportedDonorJson {
+  email?: string;
+  fullName?: string;
+  name?: string;
+  phone?: string | number;
+  bloodType?: string;
+  bloodGroup?: string;
+  registrationDate?: string;
+  district?: string;
+  area?: string;
+  union?: string;
+  organization?: string;
+  status?: string;
+  totalDonations?: string | number;
+  lastDonationDate?: string;
+  password?: string;
+  role?: string;
+  imageUrl?: string;
+  gender?: string;
+  age?: number | string;
 }
 
 export interface Donor {

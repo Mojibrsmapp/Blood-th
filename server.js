@@ -11,7 +11,9 @@ const app = express();
 const PORT = parseInt(process.env.PORT || '1000', 10);
 const HOST = process.env.HOST || '0.0.0.0';
 
-const GOOGLE_VERIFICATION_TAG = '<meta name="google-site-verification" content="p_NKsy5KQ2aPXLr90x7fdrjRX-SI1z1RnvfM7ltV6yw" />';
+const GOOGLE_VERIFICATION_TAG_1 = '<meta name="google-site-verification" content="p_NKsy5KQ2aPXLr90x7fdrjRX-SI1z1RnvfM7ltV6yw" />';
+const GOOGLE_VERIFICATION_TAG_2 = '<meta name="google-site-verification" content="5P7zC2yOvXIgMqFEPjRWuFncBTSvifMC3y_uXz5yjdQ" />';
+const GOOGLE_VERIFICATION_TAGS = `${GOOGLE_VERIFICATION_TAG_1}\n    ${GOOGLE_VERIFICATION_TAG_2}`;
 
 const distPath = path.join(__dirname, 'dist');
 const indexHtmlPath = path.join(distPath, 'index.html');
@@ -92,13 +94,12 @@ function sendVerifiedIndexHtml(res) {
 
     let html = fs.readFileSync(indexHtmlPath, 'utf8');
 
-    // Guarantee the verification meta tag is always present in <head>
-    if (!html.includes('google-site-verification')) {
-      if (html.includes('<head>')) {
-        html = html.replace('<head>', `<head>\n    ${GOOGLE_VERIFICATION_TAG}`);
-      } else if (html.includes('<head ')) {
-        html = html.replace(/<head[^>]*>/, `$& \n    ${GOOGLE_VERIFICATION_TAG}`);
-      }
+    // Guarantee both verification meta tags are present in <head>
+    if (!html.includes('p_NKsy5KQ2aPXLr90x7fdrjRX-SI1z1RnvfM7ltV6yw')) {
+      html = html.replace('<head>', `<head>\n    ${GOOGLE_VERIFICATION_TAG_1}`);
+    }
+    if (!html.includes('5P7zC2yOvXIgMqFEPjRWuFncBTSvifMC3y_uXz5yjdQ')) {
+      html = html.replace('<head>', `<head>\n    ${GOOGLE_VERIFICATION_TAG_2}`);
     }
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -146,7 +147,7 @@ if (fs.existsSync(distPath)) {
       <html lang="bn">
       <head>
         <meta charset="UTF-8">
-        ${GOOGLE_VERIFICATION_TAG}
+        ${GOOGLE_VERIFICATION_TAGS}
         <title>TotthoHub Blood - Build Required</title>
         <style>
           body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: center; padding: 50px; background: #fff5f5; color: #1e293b; }

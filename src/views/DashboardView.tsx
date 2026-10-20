@@ -23,12 +23,18 @@ import {
   Search,
   Filter,
   PlusCircle,
-  ExternalLink
+  ExternalLink,
+  Upload,
+  FileSpreadsheet,
+  Terminal,
+  Copy,
+  FileCheck
 } from 'lucide-react';
 import { 
   User, 
   UserRole, 
   Donor, 
+  BloodGroup,
   BloodRequest, 
   AuditLog, 
   MigrationResult, 
@@ -36,6 +42,8 @@ import {
 } from '../types';
 import { SAMPLE_TURSO_LEGACY_DUMP } from '../data/seedData';
 import { executeTursoMigration } from '../services/migrationService';
+import { parseDonorsFromJSON, parseDonorsFromCSV, ParseResult } from '../services/importParser';
+import { addImportedDonors } from '../services/storageService';
 import { SEO } from '../components/SEO';
 
 interface DashboardViewProps {
@@ -110,6 +118,167 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       setHasCommittedMigration(true);
       setIsMigrating(false);
     }, 800);
+  };
+
+  // Unified Import & Migration Center State
+  const [importMode, setImportMode] = useState<'json' | 'csv' | 'turso'>('json');
+  const [jsonInputText, setJsonInputText] = useState('');
+  const [csvInputText, setCsvInputText] = useState('');
+  const [importLoading, setImportLoading] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importSuccess, setImportSuccess] = useState<string | null>(null);
+  const [parsedPreview, setParsedPreview] = useState<ParseResult | null>(null);
+  const [copiedCommand, setCopiedCommand] = useState(false);
+
+  const SAMPLE_JSON_DATA = `[
+  {
+    "email": "mojibrsm@gmail.com",
+    "fullName": "Mojibur Rahman",
+    "phone": "01601519007",
+    "bloodType": "AB+",
+    "registrationDate": "2026-03-29T23:57:13.121Z",
+    "district": "কক্সবাজার",
+    "area": "রামু",
+    "union": "",
+    "organization": "Oftern IT",
+    "status": "Available",
+    "totalDonations": "4",
+    "lastDonationDate": "N/A",
+    "password": "adminmojib",
+    "role": "admin",
+    "imageUrl": "https://ik.imagekit.io/uekohag7w/roktodao/avatars/Image_-_Mojibur_Rahman_3RYwZ7Kdx.png?updatedAt=1754838793398"
+  },
+  {
+    "email": "mohammedimran712159@gmail.com",
+    "fullName": "মোঃ ইমরান",
+    "phone": "1866792169",
+    "bloodType": "B+",
+    "registrationDate": "2026-02-28T17:22:03.606Z",
+    "district": "কক্সবাজার",
+    "area": "রামু",
+    "union": "",
+    "organization": "1.0",
+    "status": "Available",
+    "totalDonations": "0",
+    "lastDonationDate": "খুনিয়াপালং ইউনিয়ন",
+    "password": "",
+    "role": "user"
+  }
+]`;
+
+  const SAMPLE_CSV_DATA = `Donor ID,Name,Age,Gender,Blood Group,NID,Contact Number,Present Address,Present Division,Present District,Present Upazila,Permanent Address,Permanent Division,Permanent District,Permanent Upazila,Last Donation Date,Created By,Created At
+24683,Mojib Rsm,21,Male,AB+,0,1.688888888E+09,East DHeck...,Chittagong,Cox's Bazar,Ramu,East DHeck...,Chittagong,Cox's Bazar,Ramu,,coxsbazar@hospi.dghs...,17-10-2026 07:00 pm
+24681,Masum,22,Male,A+,0,1.755123456E+09,Shajahanpur,Rajshahi,Bogura,Shajahanpur,Shajahanpur,Rajshahi,Bogura,Shajahanpur,,szrmch@hospi.dghs...,18-05-2026 09:34 am
+24680,Sadik,22,Male,O+,0,1.700112233E+09,Shajahanpur,Rajshahi,Bogura,Shajahanpur,Shajahanpur,Rajshahi,Bogura,Shajahanpur,,szrmch@hospi.dghs...,18-05-2026 09:33 am`;
+
+  const handleCopyCommand = (cmd: string = 'npm run import:csv && npm run build && pm2 reload blood-server') => {
+    navigator.clipboard.writeText(cmd);
+    setCopiedCommand(true);
+    setTimeout(() => setCopiedCommand(false), 3000);
+  };
+
+  const handleValidateJSON = (textToValidate?: string) => {
+    const text = textToValidate !== undefined ? textToValidate : jsonInputText;
+    if (!text.trim()) {
+      setImportError('অনুগ্রহ করে JSON ডেটা পেস্ট করুন বা ফাইল সিলেক্ট করুন।');
+      return;
+    }
+    setImportError(null);
+    setImportSuccess(null);
+    const result = parseDonorsFromJSON(text, donors);
+    if (result.errors.length > 0 && result.validCount === 0) {
+      setImportError(result.errors.join('; '));
+      setParsedPreview(null);
+      return;
+    }
+    setParsedPreview(result);
+  };
+
+  const handleValidateCSV = (textToValidate?: string) => {
+    const text = textToValidate !== undefined ? textToValidate : csvInputText;
+    if (!text.trim()) {
+      setImportError('অনুগ্রহ করে CSV ডেটা পেস্ট করুন বা ফাইল সিলেক্ট করুন।');
+      return;
+    }
+    setImportError(null);
+    setImportSuccess(null);
+    const result = parseDonorsFromCSV(text, donors);
+    if (result.errors.length > 0 && result.validCount === 0) {
+      setImportError(result.errors.join('; '));
+      setParsedPreview(null);
+      return;
+    }
+    setParsedPreview(result);
+  };
+
+  const handleCommitParsedData = () => {
+    if (!parsedPreview || parsedPreview.donors.length === 0) {
+      setImportError('সংরক্ষণ করার মতো কোনো বৈধ রক্তদাতা ডেটা নেই।');
+      return;
+    }
+
+    setImportLoading(true);
+    try {
+      const { addedCount } = addImportedDonors(parsedPreview.donors, parsedPreview.users);
+      onAddMigratedDonors(parsedPreview.donors);
+
+      setImportSuccess(
+        `সফলভাবে ${addedCount} জন রক্তদাতা এবং ${parsedPreview.users.length} টি ইউজার অ্যাকাউন্ট লোকাল ডাটাবেজে সংরক্ষণ করা হয়েছে!`
+      );
+      setParsedPreview(null);
+      setJsonInputText('');
+      setCsvInputText('');
+    } catch (err: any) {
+      setImportError(`সংরক্ষণ করতে ত্রুটি হয়েছে: ${err.message || 'Error saving data'}`);
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
+  const handleJSONFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImportLoading(true);
+    setImportError(null);
+    setImportSuccess(null);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = (event.target?.result as string) || '';
+        setJsonInputText(text);
+        handleValidateJSON(text);
+      } catch {
+        setImportError('JSON ফাইলটি পড়তে ব্যর্থ হয়েছে!');
+      } finally {
+        setImportLoading(false);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleCSVFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImportLoading(true);
+    setImportError(null);
+    setImportSuccess(null);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = (event.target?.result as string) || '';
+        setCsvInputText(text);
+        handleValidateCSV(text);
+      } catch {
+        setImportError('CSV ফাইলটি পড়তে ব্যর্থ হয়েছে!');
+      } finally {
+        setImportLoading(false);
+      }
+    };
+    reader.readAsText(file);
   };
 
   const filteredRequests = requests.filter(r => {
@@ -640,6 +809,435 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <span>ডাটাবেজ সিঙ্ক ও স্থায়ী সংরক্ষণ (২,৩৪৯ রক্তদাতা)</span>
               </button>
             </div>
+          </div>
+
+          {/* UNIFIED DATA IMPORT & MIGRATION CENTER (JSON & CSV & TURSO) */}
+          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold">
+                  <FileSpreadsheet className="w-3.5 h-3.5" />
+                  <span>ডাটা ইমপোর্ট ও মাইগ্রেশন সেন্টার</span>
+                </div>
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900">
+                  রক্তদাতা ডেটা ইমপোর্ট ইঞ্জিন (JSON ও CSV)
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-500 max-w-2xl leading-relaxed">
+                  আপনার ব্যাকআপ JSON ফাইল বা CSV (bbms_donors_backup_24700.csv) সরাসরি আপলোড অথবা পেস্ট করুন। সমস্ত ডেটা স্বয়ংক্রিয়ভাবে লোকাল ব্রাউজার স্টোরেজ এবং ডাটাবেজে সিঙ্ক হয়ে যাবে।
+                </p>
+              </div>
+
+              {/* Import Mode Switcher */}
+              <div className="flex items-center p-1 bg-slate-100 rounded-2xl border border-slate-200 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImportMode('json');
+                    setParsedPreview(null);
+                    setImportError(null);
+                  }}
+                  className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
+                    importMode === 'json'
+                      ? 'bg-white text-rose-600 shadow-xs font-extrabold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  JSON ইমপোর্ট
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImportMode('csv');
+                    setParsedPreview(null);
+                    setImportError(null);
+                  }}
+                  className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
+                    importMode === 'csv'
+                      ? 'bg-white text-rose-600 shadow-xs font-extrabold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  CSV ইমপোর্ট (BBMS)
+                </button>
+              </div>
+            </div>
+
+            {/* Notifications */}
+            {importError && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-xs font-medium flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <XCircle className="w-4 h-4 shrink-0 text-red-500" />
+                  <span>{importError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setImportError(null)}
+                  className="text-red-500 hover:text-red-700 font-bold cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            {importSuccess && (
+              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-xs font-medium flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-600" />
+                  <span>{importSuccess}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setImportSuccess(null)}
+                  className="text-emerald-600 hover:text-emerald-800 font-bold cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            {/* TAB 1: JSON IMPORT */}
+            {importMode === 'json' && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {/* File Upload Box */}
+                  <div className="p-5 rounded-2xl border-2 border-dashed border-rose-200 hover:border-rose-400 bg-rose-50/20 transition-colors flex flex-col justify-between space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 font-bold text-slate-900 text-sm">
+                        <Upload className="w-4 h-4 text-rose-600" />
+                        <span>১. JSON ফাইল আপলোড করুন (.json)</span>
+                      </div>
+                      <p className="text-xs text-slate-600 leading-relaxed">
+                        কম্পিউটার বা মোবাইল থেকে আপনার রক্তদাতা ব্যাকআপ <strong>donors.json</strong> বা যেকোনো ফরম্যাটের JSON ফাইল নির্বাচন করুন।
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="relative flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs cursor-pointer shadow-sm transition-colors">
+                        <Upload className="w-4 h-4" />
+                        <span>{importLoading ? 'প্রসেসিং হচ্ছে...' : 'JSON ফাইল বেছে নিন'}</span>
+                        <input
+                          type="file"
+                          accept=".json,application/json"
+                          onChange={handleJSONFileUpload}
+                          disabled={importLoading}
+                          className="hidden"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setJsonInputText(SAMPLE_JSON_DATA);
+                          handleValidateJSON(SAMPLE_JSON_DATA);
+                        }}
+                        className="w-full py-2 px-3 text-xs font-bold text-rose-700 bg-white border border-rose-200 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                      >
+                        নমুনা JSON লোড করুন (Mojibur Rahman ও মোঃ ইমরান)
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Terminal CLI Command */}
+                  <div className="p-5 rounded-2xl border border-slate-200 bg-slate-900 text-white flex flex-col justify-between space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 font-bold text-white text-sm">
+                          <Terminal className="w-4 h-4 text-emerald-400" />
+                          <span>২. সার্ভার টার্মিনাল কমান্ড (CLI)</span>
+                        </div>
+                        <span className="text-[11px] text-slate-400 font-mono">CLI Engine</span>
+                      </div>
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        VPS সার্ভারে <code>donors.json</code> রেখে এক ক্লিকে সরাসরি টার্মিনালে রান করতে পারেন:
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 font-mono text-xs text-emerald-400 flex items-center justify-between gap-2 overflow-x-auto">
+                        <code>node scripts/import_donors_json.js</code>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyCommand('node scripts/import_donors_json.js && npm run build && pm2 reload blood-server')}
+                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[11px] font-sans font-bold shrink-0 flex items-center gap-1 transition-colors cursor-pointer"
+                        >
+                          <Copy className="w-3 h-3" />
+                          <span>{copiedCommand ? 'কপিকৃত!' : 'কপি'}</span>
+                        </button>
+                      </div>
+                      <div className="text-[11px] text-slate-400 font-mono">
+                        কমান্ড: <code>npm run import:json</code>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Direct JSON Paste Textarea */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5 text-slate-500" />
+                      <span>অথবা সরাসরি JSON কোড পেস্ট করুন</span>
+                    </label>
+                    <div className="flex items-center gap-2">
+                      {jsonInputText && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setJsonInputText('');
+                            setParsedPreview(null);
+                          }}
+                          className="text-xs text-slate-400 hover:text-slate-600 cursor-pointer"
+                        >
+                          মুছে ফেলুন
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleValidateJSON()}
+                        className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold cursor-pointer transition-colors shadow-xs"
+                      >
+                        যাচাই ও প্রিভিউ দেখুন
+                      </button>
+                    </div>
+                  </div>
+
+                  <textarea
+                    rows={6}
+                    value={jsonInputText}
+                    onChange={(e) => setJsonInputText(e.target.value)}
+                    placeholder='[ { "fullName": "Mojibur Rahman", "phone": "01601519007", "bloodType": "AB+", "district": "কক্সবাজার", "area": "রামু", ... } ]'
+                    className="w-full p-4 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500 font-mono text-xs text-slate-800 bg-slate-50/60"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: CSV IMPORT */}
+            {importMode === 'csv' && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {/* File Upload Box */}
+                  <div className="p-5 rounded-2xl border-2 border-dashed border-rose-200 hover:border-rose-400 bg-rose-50/20 transition-colors flex flex-col justify-between space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 font-bold text-slate-900 text-sm">
+                        <Upload className="w-4 h-4 text-rose-600" />
+                        <span>১. CSV ফাইল আপলোড (.csv)</span>
+                      </div>
+                      <p className="text-xs text-slate-600 leading-relaxed">
+                        আপনার <strong>bbms_donors_backup_24700.csv</strong> ফাইলটি সিলেক্ট করুন। ব্রাউজার স্বয়ংক্রিয়ভাবে ক্লিন করে লোকাল ডাটাবেজে সিঙ্ক করবে।
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="relative flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs cursor-pointer shadow-sm transition-colors">
+                        <Upload className="w-4 h-4" />
+                        <span>{importLoading ? 'প্রসেসিং হচ্ছে...' : 'CSV ফাইল বেছে নিন'}</span>
+                        <input
+                          type="file"
+                          accept=".csv,text/csv"
+                          onChange={handleCSVFileUpload}
+                          disabled={importLoading}
+                          className="hidden"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCsvInputText(SAMPLE_CSV_DATA);
+                          handleValidateCSV(SAMPLE_CSV_DATA);
+                        }}
+                        className="w-full py-2 px-3 text-xs font-bold text-rose-700 bg-white border border-rose-200 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                      >
+                        নমুনা CSV লোড করুন (BBMS স্যাম্পল)
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Terminal CLI Command */}
+                  <div className="p-5 rounded-2xl border border-slate-200 bg-slate-900 text-white flex flex-col justify-between space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 font-bold text-white text-sm">
+                          <Terminal className="w-4 h-4 text-emerald-400" />
+                          <span>২. সার্ভার টার্মিনাল কমান্ড (২৪,০০০+ রক্তদাতা)</span>
+                        </div>
+                        <span className="text-[11px] text-slate-400 font-mono">CLI Engine</span>
+                      </div>
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        সার্ভারে <code>/home/blood.totthohub.com/public_html/</code> ফোল্ডারে ফাইলটি রেখে এক ক্লিকে টার্মিনালে রান করুন:
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 font-mono text-xs text-emerald-400 flex items-center justify-between gap-2 overflow-x-auto">
+                        <code>node scripts/import_bbms_csv.js</code>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyCommand('node scripts/import_bbms_csv.js && npm run build && pm2 reload blood-server')}
+                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[11px] font-sans font-bold shrink-0 flex items-center gap-1 transition-colors cursor-pointer"
+                        >
+                          <Copy className="w-3 h-3" />
+                          <span>{copiedCommand ? 'কপিকৃত!' : 'কপি'}</span>
+                        </button>
+                      </div>
+                      <div className="text-[11px] text-slate-400 font-mono">
+                        টার্গেট: <code>bbms_donors_backup_24700.csv</code>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Direct CSV Paste Textarea */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5 text-slate-500" />
+                      <span>অথবা সরাসরি CSV টেক্সট পেস্ট করুন</span>
+                    </label>
+                    <div className="flex items-center gap-2">
+                      {csvInputText && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCsvInputText('');
+                            setParsedPreview(null);
+                          }}
+                          className="text-xs text-slate-400 hover:text-slate-600 cursor-pointer"
+                        >
+                          মুছে ফেলুন
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleValidateCSV()}
+                        className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold cursor-pointer transition-colors shadow-xs"
+                      >
+                        যাচাই ও প্রিভিউ দেখুন
+                      </button>
+                    </div>
+                  </div>
+
+                  <textarea
+                    rows={5}
+                    value={csvInputText}
+                    onChange={(e) => setCsvInputText(e.target.value)}
+                    placeholder="Donor ID,Name,Age,Gender,Blood Group,NID,Contact Number,Present Address,Present Division,Present District,Present Upazila,..."
+                    className="w-full p-4 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500 font-mono text-xs text-slate-800 bg-slate-50/60"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* PREVIEW & COMMIT WINDOW */}
+            {parsedPreview && (
+              <div className="p-6 bg-slate-50 border border-slate-200 rounded-3xl space-y-5">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <h4 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                      <span>যাচাইকৃত ডেটা প্রিভিউ ({parsedPreview.validCount} জন রক্তদাতা)</span>
+                    </h4>
+                    <p className="text-xs text-slate-500">
+                      মোট প্রসেসকৃত: {parsedPreview.total} টি সারি | ডুপ্লিকেট বাদ পড়া: {parsedPreview.duplicateCount} টি
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+                    <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg font-bold">
+                      ✓ বৈধ রক্তদাতা: {parsedPreview.validCount}
+                    </span>
+                    {parsedPreview.adminUsersCount > 0 && (
+                      <span className="px-2.5 py-1 bg-purple-100 text-purple-800 rounded-lg font-bold">
+                        ★ অ্যাডমিন অ্যাকাউন্ট: {parsedPreview.adminUsersCount}
+                      </span>
+                    )}
+                    <span className="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-lg font-bold">
+                      ⚠ ডুপ্লিকেট: {parsedPreview.duplicateCount}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Preview Table */}
+                <div className="overflow-x-auto border border-slate-200 bg-white rounded-2xl max-h-72 overflow-y-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-100 text-slate-600 font-bold sticky top-0">
+                      <tr>
+                        <th className="p-2.5">নাম (Name)</th>
+                        <th className="p-2.5">মোবাইল (Phone)</th>
+                        <th className="p-2.5">রক্তের গ্রুপ</th>
+                        <th className="p-2.5">এলাকা ও জেলা</th>
+                        <th className="p-2.5">রোল (Role)</th>
+                        <th className="p-2.5">রক্তদান সংখ্যা</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {parsedPreview.donors.slice(0, 10).map((d, idx) => {
+                        const matchedUser = parsedPreview.users.find(u => u.phone === d.phone);
+                        return (
+                          <tr key={idx} className="hover:bg-slate-50">
+                            <td className="p-2.5 font-bold text-slate-900 flex items-center gap-2">
+                              {d.imageUrl ? (
+                                <img src={d.imageUrl} alt={d.name} className="w-6 h-6 rounded-full object-cover border border-slate-200" />
+                              ) : (
+                                <div className="w-6 h-6 rounded-full bg-rose-100 text-rose-700 font-bold flex items-center justify-center text-[10px]">
+                                  {d.name.charAt(0)}
+                                </div>
+                              )}
+                              <span>{d.name}</span>
+                            </td>
+                            <td className="p-2.5 font-mono text-slate-700">{d.phone}</td>
+                            <td className="p-2.5">
+                              <span className="px-2 py-0.5 rounded bg-rose-50 text-rose-700 font-bold font-mono">
+                                {d.bloodGroup}
+                              </span>
+                            </td>
+                            <td className="p-2.5 text-slate-600">{d.area}</td>
+                            <td className="p-2.5">
+                              {matchedUser?.role === 'admin' ? (
+                                <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-700 font-bold text-[10px]">
+                                  ADMIN
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold text-[10px]">
+                                  DONOR
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-2.5 font-mono text-slate-700">{d.donationCount} বার</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {parsedPreview.donors.length > 10 && (
+                  <p className="text-[11px] text-slate-500 text-center">
+                    ...এবং আরও {parsedPreview.donors.length - 10} জন রক্তদাতা প্রস্তুত
+                  </p>
+                )}
+
+                {/* Commit Action Button */}
+                <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setParsedPreview(null)}
+                    className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 cursor-pointer"
+                  >
+                    বাতিল
+                  </button>
+                  <button
+                    type="button"
+                    disabled={importLoading}
+                    onClick={handleCommitParsedData}
+                    className="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>লোকাল ডাটাবেজে সংরক্ষণ করুন ({parsedPreview.validCount} জন)</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
           </div>
 
           {/* Raw Legacy Data Queue Preview */}
